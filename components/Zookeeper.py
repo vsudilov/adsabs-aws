@@ -31,7 +31,7 @@ class Zookeeper:
     idempotent provisioning of zookeeper ensemble in AWS/EC2
     We assume that the autoscale group takes care of keeping N instances up.
     '''
-    checkASG()
+    self.checkASG()
 
     instances = [i for i in self.c.get_only_instances() if self.tag_value in i.tags[self.tag]]
     if len(instances) != self.instances:
