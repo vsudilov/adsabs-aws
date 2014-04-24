@@ -1,5 +1,6 @@
 import boto
 import boto.ec2
+import boto.ec2.autoscale
 import sys,os
 import utils
 
@@ -12,14 +13,27 @@ class Zookeeper:
     self.tag = tag
     self.tag_value = tag_value
 
+  def checkASG(self,resource_id='zookeeper-ensemble-group'):
+    '''
+    Not currently possible to assign ASG tags via the web interface
+    TODO: Check launchconfig, this still assumes the ASG exists
+    '''
+    conn = boto.ec2.autoscale.AutoScaleConnection()
+    groups = conn.get_all_groups()
+
+    if resource_id not in [g.name for g in groups]:
+      t = boto.ec2.autoscale.tag.Tag(key='Name',value='zookeeper',propagate_at_launch=True,resource_id=resource_id)
+      conn.create_or_update_tags(t)
+      conn.update()
 
   def provision(self):
     '''
     idempotent provisioning of zookeeper ensemble in AWS/EC2
     We assume that the autoscale group takes care of keeping N instances up.
     '''
+    checkASG()
 
-    instances = [i for i in c.get_only_instances() if self.tag_value in i.tags[self.tag]]
+    instances = [i for i in self.c.get_only_instances() if self.tag_value in i.tags[self.tag]]
     if len(instances) != self.instances:
       #Autoscaling isn't working! An alarm should be set for this!
       sys.exit(1)
