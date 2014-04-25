@@ -1,0 +1,145 @@
+#Note: Top level names must be the same as their tags['Name'] value!
+VPC = {
+  'adsabs': {
+    'cidr_block': '10.0.0.0/16',
+    'tags': {
+      'Name': 'adsabs'
+    },
+    'subnets': [{
+      'cidr_block':'10.0.0.0/24',
+      'tags': {'Name':'adsabs-subnet'},
+      },
+    ],
+  },
+}
+
+
+EC2 = {
+  'security_groups': {
+    'adsabs-security-group': {
+      'description': 'standard access from cfa',
+      'tags': {'Name': 'adsabs-security-group'},
+      'vpc' : 'adsabs',
+      'rules': [
+        {'ip_protocol':'icmp','from_port':-1,'to_port':-1,'cidr_ip':'10.0.0.0/24'},
+        {'ip_protocol':'tcp','from_port':0,'to_port':65535,'cidr_ip':'10.0.0.0/24'},
+        {'ip_protocol':'udp','from_port':0,'to_port':65535,'cidr_ip':'10.0.0.0/24'},
+        {'ip_protocol':'tcp','from_port':22,'to_port':22,'cidr_ip':'131.142.152.62/32'},
+      ],
+    },
+  },
+
+  'network_interfaces': {
+    'zookeeper-eni-1': {
+      'subnet': 'adsabs-subnet',
+      'description':'ENI associated with zookeeper',
+      'tags':{'Name':'zookeeper-eni-1'},
+      'groups': ['adsabs-security-group',],
+      'EIP': True,
+    },
+    'zookeeper-eni-2': {
+      'subnet': 'adsabs-subnet',
+      'description':'ENI associated with zookeeper',
+      'tags':{'Name':'zookeeper-eni-2'},
+      'groups': ['adsabs-security-group',],
+      'EIP': True,
+    },
+    'zookeeper-eni-3': {
+      'subnet': 'adsabs-subnet',
+      'description':'ENI associated with zookeeper',
+      'tags':{'Name':'zookeeper-eni-3'},
+      'groups': ['adsabs-security-group',],
+      'EIP': True,
+    },    
+
+  },
+}
+
+
+
+#Not working; policy docs are not formatted correctly (copy/pasted from AWS console)
+IAM = {
+  'admin': {
+    'path': '/',
+    'doc': {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Effect": "Allow",
+          "Action": "*",
+          "Resource": "*"
+        },
+      ],
+    },
+  },
+
+  'readonly': {
+    'path': '/',
+    'doc': {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Action": [
+            "appstream:Get*",
+            "autoscaling:Describe*",
+            "cloudformation:DescribeStacks",
+            "cloudformation:DescribeStackEvents",
+            "cloudformation:DescribeStackResources",
+            "cloudformation:GetTemplate",
+            "cloudformation:List*",
+            "cloudfront:Get*",
+            "cloudfront:List*",
+            "cloudtrail:DescribeTrails",
+            "cloudtrail:GetTrailStatus",
+            "cloudwatch:Describe*",
+            "cloudwatch:Get*",
+            "cloudwatch:List*",
+            "directconnect:Describe*",
+            "dynamodb:GetItem",
+            "dynamodb:BatchGetItem",
+            "dynamodb:Query",
+            "dynamodb:Scan",
+            "dynamodb:DescribeTable",
+            "dynamodb:ListTables",
+            "ec2:Describe*",
+            "elasticache:Describe*",
+            "elasticbeanstalk:Check*",
+            "elasticbeanstalk:Describe*",
+            "elasticbeanstalk:List*",
+            "elasticbeanstalk:RequestEnvironmentInfo",
+            "elasticbeanstalk:RetrieveEnvironmentInfo",
+            "elasticloadbalancing:Describe*",
+            "elastictranscoder:Read*",
+            "elastictranscoder:List*",
+            "iam:List*",
+            "iam:Get*",
+            "opsworks:Describe*",
+            "opsworks:Get*",
+            "route53:Get*",
+            "route53:List*",
+            "redshift:Describe*",
+            "redshift:ViewQueriesInConsole",
+            "rds:Describe*",
+            "rds:ListTagsForResource",
+            "s3:Get*",
+            "s3:List*",
+            "sdb:GetAttributes",
+            "sdb:List*",
+            "sdb:Select*",
+            "ses:Get*",
+            "ses:List*",
+            "sns:Get*",
+            "sns:List*",
+            "sqs:GetQueueAttributes",
+            "sqs:ListQueues",
+            "sqs:ReceiveMessage",
+            "storagegateway:List*",
+            "storagegateway:Describe*"
+          ],
+          "Effect": "Allow",
+          "Resource": "*"
+        },
+      ],
+    },
+  },
+}

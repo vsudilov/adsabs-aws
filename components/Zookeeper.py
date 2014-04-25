@@ -15,7 +15,7 @@ class Zookeeper:
     self.tag = tag
     self.tag_value = tag_value
     self.metadata = utils.get_instance_metadata()
-    self.zookeepers = self.c.get_only_instances()
+    self.zookeepers = [i for i in self.c.get_only_instances() if self.tag_value in i.tags[self.tag]]
     self.this_instance = next(i for i in self.zookeepers if i.id == self.metadata['instance-id'])
 
   def checkASG(self,resource_id='zookeeper-ensemble-group'):
@@ -38,7 +38,7 @@ class Zookeeper:
     '''
     self.checkASG()
 
-    instances = [i for i in self.zookeepers if self.tag_value in i.tags[self.tag]]
+    instances = self.zookeepers
     if len(instances) != self.num_instances:
       #Autoscaling isn't working! An alarm should be set for this!
       sys.exit(1)
