@@ -27,7 +27,8 @@ def main(argv=sys.argv):
 
   if args.zookeeper:
     zk = Zookeeper.Zookeeper(connect())
-    zk.provision()
-
+    zk.globalProvision()
+    zk.localProvision()
+    
 if __name__ == '__main__':
   main()
