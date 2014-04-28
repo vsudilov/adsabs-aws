@@ -1,3 +1,5 @@
+import time
+
 import boto
 import boto.ec2
 import boto.iam
@@ -19,6 +21,35 @@ class GlobalProvisioner:
     #self._IAM_provision() #TODO:Figure out why AWS gives policy syntax error
     self._VPC_provision()
     self._EC2_provision()
+    self._ASG_provision()
+
+
+  def _ASG_provision(self):
+    c = utils.connect(boto.ec2.autoscale.AutoScaleConnection)
+    c2 = utils.connect(boto.vpc.VPCConnection)
+    c3 = utils.connect(boto.ec2.connection.EC2Connection)
+    snapshot_subnets = c2.get_all_subnets()
+    snapshot_security_groups = c3.get_all_security_groups()
+    c2.close()
+    c3.close()
+
+    #launch configs
+    for lc in set(self.config.AS['launch_configs'].keys()).difference([i.name for i in c.get_all_launch_configurations()]):
+      properties = self.config.AS['launch_configs'][lc]
+      properties['name'] = lc
+      properties['security_groups'] = [next(j.id for j in snapshot_security_groups if j.tags.get('Name',None)==i) for i in properties['security_groups']]
+      config = boto.ec2.autoscale.launchconfig.LaunchConfiguration(**properties)
+      c.create_launch_configuration(config)
+
+    #autoscale groups
+    for asg in set(self.config.AS['autoscale_groups'].keys()).difference([i.name for i in c.get_all_groups()]):
+      properties = self.config.AS['autoscale_groups'][asg]
+      properties['name'] = asg
+      properties['availability_zones'] = [next(j.availability_zone for j in snapshot_subnets if j.tags.get('Name',None)==i) for i in properties['vpc_zone_identifier']]
+      properties['vpc_zone_identifier'] = [next(j.id for j in snapshot_subnets if j.tags.get('Name',None)==i) for i in properties['vpc_zone_identifier']]
+      properties['tags'] = [boto.ec2.autoscale.tag.Tag(**i) for i in properties['tags']]
+      group = boto.ec2.autoscale.group.AutoScalingGroup(**properties)
+      c.create_auto_scaling_group(group)
 
   def _EC2_provision(self):
     c = utils.connect(boto.ec2.connection.EC2Connection)
@@ -26,6 +57,7 @@ class GlobalProvisioner:
     snapshot_groups = c.get_all_security_groups()
     snapshot_vpcs = c2.get_all_vpcs()
     snapshot_subnets = c2.get_all_subnets()
+    c2.close()
 
     #Security groups
     for s in set(self.config.EC2['security_groups'].keys()).difference([i.tags.get('Name',None) for i in c.get_all_security_groups()]):
@@ -41,11 +73,14 @@ class GlobalProvisioner:
       groups = [i.id for i in snapshot_groups if i.tags.get('Name',None) in properties['groups']]
       subnet_id = next(i.id for i in snapshot_subnets if i.tags.get('Name',None)==properties['subnet'])
       ni = c.create_network_interface(subnet_id,description=properties['description'],groups=groups)
+      time.sleep(1)
       c.create_tags(ni.id,properties['tags'])
       if properties['EIP']:
         eip = c.allocate_address()
+        time.sleep(1)
         #When using an Allocation ID, make sure to pass None for public_ip as EC2 expects a single parameter and if public_ip is passed boto will preference that instead of allocation_id.
         c.associate_address(network_interface_id=ni.id,public_ip=None,allocation_id=eip.allocation_id)
+
 
   def _VPC_provision(self):
     c = utils.connect(boto.vpc.VPCConnection)
@@ -56,9 +91,9 @@ class GlobalProvisioner:
       c.create_tags(vpc.id,properties['tags'])
       gateway = c.create_internet_gateway()
       c.attach_internet_gateway(gateway.id,vpc.id) #TODO: Route tables?
-      for subnet in self.config.VPC[v]['subnets']:
-        s = c.create_subnet(vpc.id,subnet['cidr_block'],availability_zone=None, dry_run=False)
-        c.create_tags(s.id,subnet['tags'])
+      for subnet,properties in self.config.VPC[v]['subnets'].iteritems():
+        s = c.create_subnet(vpc.id,properties['cidr_block'],availability_zone=None, dry_run=False)
+        c.create_tags(s.id,properties['tags'])
 
   def _IAM_provision(self):
     c = utils.connect(boto.iam.connection.IAMConnection)

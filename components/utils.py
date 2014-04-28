@@ -9,15 +9,15 @@ import boto.utils
 Define general tasks our deployment in AWS
 '''
 
-def connect(connectingClass):
+def connect(ConnectionClass):
   _id = os.environ.get('AWS_ACCESS_KEY',None)
   key = os.environ.get('AWS_SECRET_KEY',None)
   try:
     #auth is automatically handled via IAM in an EC2 instance; no need to supply credentials
-    c = connectingClass()
+    c = ConnectionClass()
   except boto.exception.NoAuthHandlerFound:
     #Fallback: either we aren't in an EC2 instance, or no IAM group has been set
-    c = connectingClass(aws_access_key_id=_id,aws_secret_access_key=key)
+    c = ConnectionClass(aws_access_key_id=_id,aws_secret_access_key=key)
   return c
 
 def getEIPs(conn,shouldExist=3):

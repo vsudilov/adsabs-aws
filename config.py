@@ -1,15 +1,60 @@
-#Note: Top level names must be the same as their tags['Name'] value!
+#Note: Parent key must be the same as their tags['Name'] value!
+
+AS = {
+  'launch_configs': {
+    'zookeeper-launchconfig': {
+        'image_id': 'ami-018c9568', #ubuntu-trusty-14.04-amd64-server-20140416.1
+        'key_name': 'micro',
+        'security_groups': ['adsabs-security-group',],
+        'instance_type': 't1.micro',
+        'instance_monitoring': False,
+        'associate_public_ip_address': False,
+        'user_data': 
+          '''
+          #!/bin/bash
+          apt-get update
+          apt-get install -y python-pip git
+          pip install --upgrade pip boto
+
+          git clone https://github.com/adsabs/adsabs-aws /adsabs-aws
+          /usr/bin/python  /adsabs-aws/aws_provisioner.py --zookeeper
+          ''',
+    },
+  },
+
+  'autoscale_groups':{
+    'zookeeper-asg': {
+      'launch_config': 'zookeeper-launchconfig',
+      'default_cooldown': 300,
+      'desired_capacity': 0,
+      'max_size': 0,
+      'min_size': 0,
+      'health_check_period': 300,
+      'health_check_type': 'EC2',
+      'load_balancers': [],
+      'vpc_zone_identifier': ['adsabs-subnet',],
+      'tags': [#These tags will be used to instantiate a boto Tag class; these specific keys are expected
+        { 
+          'key':'Name',
+          'value': 'zookeeper-asg',
+          'propagate_at_launch':True,
+          'resource_id': 'zookeeper-asg', #Must be set to name of this ASG
+        },
+      ],
+    },
+  },
+}
+
 VPC = {
   'adsabs': {
     'cidr_block': '10.0.0.0/16',
-    'tags': {
-      'Name': 'adsabs'
-    },
-    'subnets': [{
-      'cidr_block':'10.0.0.0/24',
-      'tags': {'Name':'adsabs-subnet'},
+    'tags': {'Name': 'adsabs'},
+    'subnets': {
+      'adsabs-subnet': {
+        'cidr_block':'10.0.0.0/24',
+        'tags': {'Name':'adsabs-subnet'},
       },
-    ],
+    },
   },
 }
 
