@@ -27,7 +27,7 @@ def main(argv=sys.argv):
     gp.orderedProvision()
 
   if args.zookeeper:
-    zk = Zookeeper.Zookeeper(connect())
+    zk = Zookeeper.Zookeeper()
     zk.localProvision()
 
 if __name__ == '__main__':

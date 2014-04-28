@@ -20,20 +20,6 @@ def connect(ConnectionClass):
     c = ConnectionClass(aws_access_key_id=_id,aws_secret_access_key=key)
   return c
 
-def getEIPs(conn,shouldExist=3):
-  #Get elastic IPs
-  addrs = conn.get_all_addresses()
-  if len(addrs) > shouldExist:
-    #Too many EIPs; something is very wrong. An alarm should be set!
-    sys.exit(1)
-  
-  while len(addrs) < shouldExist:
-    addrs.append(conn.allocate_address())
-
-  return addrs
-
-def get_instance_metadata():
-  return boto.utils.get_instance_metadata()
 
 def find_resource_by_tag(tag,value):
   pass

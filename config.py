@@ -13,11 +13,15 @@ AS = {
           '''
           #!/bin/bash
           apt-get update
-          apt-get install -y python-pip git
+          apt-get install -y python-pip git docker.io
           pip install --upgrade pip boto
 
           git clone https://github.com/adsabs/adsabs-aws /adsabs-aws
+          git clone https://github.com/adsabs/adsabs-vagrant /adsabs-vagrant
           /usr/bin/python  /adsabs-aws/aws_provisioner.py --zookeeper
+          service docker.io start
+          docker.io build -t adsabs/zookeeper .
+          docker.io run -d --name zookeeper -p 2181:2181 -p 2888:2888 -p 3888:3888 -v /zookeeper/:/zookeeper/:rw adsabs/zookeeper
           ''',
     },
   },
@@ -26,9 +30,9 @@ AS = {
     'zookeeper-asg': {
       'launch_config': 'zookeeper-launchconfig',
       'default_cooldown': 300,
-      'desired_capacity': 0,
-      'max_size': 0,
-      'min_size': 0,
+      'desired_capacity': 3,
+      'max_size': 3,
+      'min_size': 3,
       'health_check_period': 300,
       'health_check_type': 'EC2',
       'load_balancers': [],

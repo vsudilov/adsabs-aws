@@ -1,65 +1,44 @@
 import sys,os
+import time
 
 import boto
 import boto.ec2
-import boto.ec2.autoscale
 import utils
 
+
 class Zookeeper:
-  def __init__(self,boto_ec2_connection,num_instances=3,
-                tag=                'Name',
-                tag_value=          'zookeeper',
-                id_tag=             'id'): #The tag params here represent what they should/will be, not what they necessarily are.
-    self.c = boto_ec2_connection
-    self.num_instances = instances
+  def __init__(self,num_instances=3,tag='Name',tag_value='zookeeper'):
+    self.c = utils.connect(boto.ec2.connection.EC2Connection)
+    self.num_instances = num_instances
     self.tag = tag
     self.tag_value = tag_value
-    self.metadata = utils.get_instance_metadata()
-    self.zookeepers = [i for i in self.c.get_only_instances() if self.tag_value in i.tags[self.tag]]
+    self.metadata = boto.utils.get_instance_metadata()
     self.this_instance = next(i for i in self.zookeepers if i.id == self.metadata['instance-id'])
 
-  def checkASG(self,resource_id='zookeeper-ensemble-group'):
-    '''
-    Not currently possible to assign ASG tags via the web interface
-    TODO: Check launchconfig, this still assumes the ASG exists
-    '''
-    conn = boto.ec2.autoscale.AutoScaleConnection()
-    groups = conn.get_all_groups()
-
-    if resource_id not in [g.name for g in groups]:
-      t = boto.ec2.autoscale.tag.Tag(key='Name',value='zookeeper',propagate_at_launch=True,resource_id=resource_id)
-      conn.create_or_update_tags(t)
-      conn.update()
-
-  def globalProvision(self):
+  def localProvision(self,zk_dockerfile_path='/adsabs-vagrant/dockerfiles/zookeeper/'):
     '''
     idempotent provisioning of zookeeper ensemble in AWS/EC2
     We assume that the autoscale group takes care of keeping N instances up.
     '''
-    self.checkASG()
 
-    instances = self.zookeepers
-    if len(instances) != self.num_instances:
-      #Autoscaling isn't working! An alarm should be set for this!
-      sys.exit(1)
+    ENIs = [i for i in self.c.get_all_network_interfaces() if 'zookeeper' in i.tags.get('Name','')]
 
-    #Map the EIPs to any instances without one
-    addrs = utils.getEIPs(self.c,shouldExist=3)
+    try:
+      self.eni = [i for i in ENIs if not i.attachment][0]
+    except IndexError:
+      #If this provisioner is running, there should be at least one unallocated ENI
+      raise EnvironmentError, "No unallocated ENIs!"
 
-    #These instances need an IP and ID assigned
-    pool_ip = [a for a in addrs if a.public_ip not in [i.ip_address for i in instances]]
-    pool_id = set([i+1 for i in range(self.num_instances)]).difference([int(i.tags[self.id_tag]) for i in instances])
-    assert len(pool_ip)==len(pool_id)
-    for inst in [i for i in instances if i.ip_address not in [a.public_ip for a in addrs]]:
-      inst.tags[self.id_tag] = pool_id.pop()
-      inst.use_ip(pool_ip.pop())
-      inst.update()
-      instances.append(inst)
-    assert len(instances) == self.num_instances
+    self.c.attach_network_interface(self.eni.id,self.this_instance.id,device_index=1)
+    time.sleep(1)
 
-  def localProvision(self,zk_datadir='/zookeeper/data/'):
     utils.mkdir_p(zk_datadir)
-    _id = self.this_instance.tags[self.id_tag]
-
-    with open(os.path.join(zk_dir,'myid'),'w') as fp:
+    _id = self.eni.tags['Name'].split('-')[1]
+    with open(os.path.join(zk_dockerfile_path,'myid'),'w') as fp:
       fp.write(_id)
+    with open(os.path.join(zk_dockerfile_path,'zoo.cfg'),'w') as fp:
+      lines = [i for i in fp.readlines() if "server." not in i]
+      servers = ['%s:2888:3888' % i.private_ip_address for i in ENIs]
+      lines.extend(servers)
+      fp.write('\n'.join(lines))
+
