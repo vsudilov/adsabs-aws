@@ -4,6 +4,7 @@ import boto
 import boto.ec2
 import boto.iam
 import boto.vpc
+import boto.ec2.autoscale
 
 import utils
 
@@ -54,7 +55,6 @@ class GlobalProvisioner:
   def _EC2_provision(self):
     c = utils.connect(boto.ec2.connection.EC2Connection)
     c2 = utils.connect(boto.vpc.VPCConnection)
-    snapshot_groups = c.get_all_security_groups()
     snapshot_vpcs = c2.get_all_vpcs()
     snapshot_subnets = c2.get_all_subnets()
     c2.close()
@@ -66,13 +66,17 @@ class GlobalProvisioner:
       sg = c.create_security_group(s, properties['description'], vpc_id=vpc_id, dry_run=False)
       c.create_tags(sg.id,properties['tags'])
       [sg.authorize(**rule) for rule in properties['rules']]
+    snapshot_groups = c.get_all_security_groups()
 
     #ENIs
     for n in set(self.config.EC2['network_interfaces'].keys()).difference([i.tags.get('Name',None) for i in c.get_all_network_interfaces()]):
       properties = self.config.EC2['network_interfaces'][n]
-      groups = [i.id for i in snapshot_groups if i.tags.get('Name',None) in properties['groups']]
+      groups = [i.id for i in snapshot_groups if i.tags.get('Name',"None") in properties['groups']]
       subnet_id = next(i.id for i in snapshot_subnets if i.tags.get('Name',None)==properties['subnet'])
-      ni = c.create_network_interface(subnet_id,description=properties['description'],groups=groups)
+      ni = c.create_network_interface(subnet_id,
+        description=properties['description'],
+        groups=groups,
+        private_ip_address=properties['private_ip_address'])
       time.sleep(1)
       c.create_tags(ni.id,properties['tags'])
       if properties['EIP']:
@@ -80,7 +84,7 @@ class GlobalProvisioner:
         time.sleep(1)
         #When using an Allocation ID, make sure to pass None for public_ip as EC2 expects a single parameter and if public_ip is passed boto will preference that instead of allocation_id.
         c.associate_address(network_interface_id=ni.id,public_ip=None,allocation_id=eip.allocation_id)
-
+        time.sleep(1)
 
   def _VPC_provision(self):
     c = utils.connect(boto.vpc.VPCConnection)
@@ -88,9 +92,13 @@ class GlobalProvisioner:
     for v in set(self.config.VPC.keys()).difference([i.tags.get('Name',None) for i in c.get_all_vpcs()]):
       properties = self.config.VPC[v]
       vpc = c.create_vpc(properties['cidr_block'], instance_tenancy=None, dry_run=False)
+      time.sleep(1)
       c.create_tags(vpc.id,properties['tags'])
       gateway = c.create_internet_gateway()
       c.attach_internet_gateway(gateway.id,vpc.id) #TODO: Route tables?
+      time.sleep(1)
+      rt = next(i for i in c.get_all_route_tables() if i.vpc_id==vpc.id)
+      c.create_route(rt.id,'0.0.0.0/0',gateway_id=gateway.id)
       for subnet,properties in self.config.VPC[v]['subnets'].iteritems():
         s = c.create_subnet(vpc.id,properties['cidr_block'],availability_zone=None, dry_run=False)
         c.create_tags(s.id,properties['tags'])

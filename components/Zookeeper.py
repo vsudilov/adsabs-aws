@@ -1,5 +1,6 @@
 import sys,os
 import time
+import subprocess
 
 import boto
 import boto.ec2
@@ -13,7 +14,7 @@ class Zookeeper:
     self.tag = tag
     self.tag_value = tag_value
     self.metadata = boto.utils.get_instance_metadata()
-    self.this_instance = next(i for i in self.zookeepers if i.id == self.metadata['instance-id'])
+    self.this_instance = next(i for i in self.c.get_only_instances() if i.id == self.metadata['instance-id'])
 
   def localProvision(self,zk_dockerfile_path='/adsabs-vagrant/dockerfiles/zookeeper/'):
     '''
@@ -21,24 +22,27 @@ class Zookeeper:
     We assume that the autoscale group takes care of keeping N instances up.
     '''
 
-    ENIs = [i for i in self.c.get_all_network_interfaces() if 'zookeeper' in i.tags.get('Name','')]
+    ENIs = dict([(i.tags['Name'].split('-')[-1],i) for i in self.c.get_all_network_interfaces() if 'zookeeper' in i.tags.get('Name','')])
 
     try:
-      self.eni = [i for i in ENIs if not i.attachment][0]
+      self.eni = [i for i in ENIs.values() if not i.attachment][0]
     except IndexError:
       #If this provisioner is running, there should be at least one unallocated ENI
       raise EnvironmentError, "No unallocated ENIs!"
 
     self.c.attach_network_interface(self.eni.id,self.this_instance.id,device_index=1)
-    time.sleep(1)
-
-    utils.mkdir_p(zk_datadir)
-    _id = self.eni.tags['Name'].split('-')[1]
-    with open(os.path.join(zk_dockerfile_path,'myid'),'w') as fp:
-      fp.write(_id)
-    with open(os.path.join(zk_dockerfile_path,'zoo.cfg'),'w') as fp:
-      lines = [i for i in fp.readlines() if "server." not in i]
-      servers = ['%s:2888:3888' % i.private_ip_address for i in ENIs]
+    time.sleep(5) #Wait for OS to see the new interface
+    P = subprocess.Popen(['dhclient','eth1'])
+    P.wait()
+    utils.mkdir_p(zk_dockerfile_path)
+    _id = self.eni.tags['Name'].split('-')[-1]
+    with utils.cd(zk_dockerfile_path):
+      with open('myid','w') as fp:
+        fp.write(_id)
+      with open('zoo.cfg','r') as fp:
+        lines = [i for i in fp.readlines() if "server." not in i]
+      servers = ['server.%s=%s:2888:3888' % (key,interface.private_ip_address) for key,interface in ENIs.iteritems()]
+      servers.sort()
       lines.extend(servers)
-      fp.write('\n'.join(lines))
-
+      with open('zoo.cfg','w') as fp:
+        fp.write('\n'.join(lines))
