@@ -20,8 +20,10 @@ AS = {
           git clone https://github.com/adsabs/adsabs-vagrant /adsabs-vagrant
           /usr/bin/python  /adsabs-aws/aws_provisioner.py --zookeeper
           service docker.io start
+          pushd /adsabs-vagrant/dockerfiles/zookeeper/
           docker.io build -t adsabs/zookeeper .
-          docker.io run -d --name zookeeper -p 2181:2181 -p 2888:2888 -p 3888:3888 -v /zookeeper/:/zookeeper/:rw adsabs/zookeeper
+          docker.io run -d --name zookeeper -p 2181:2181 -p 2888:2888 -p 3888:3888 adsabs/zookeeper
+          popd
           ''',
     },
   },
@@ -37,6 +39,7 @@ AS = {
       'health_check_type': 'EC2',
       'load_balancers': [],
       'vpc_zone_identifier': ['adsabs-subnet',],
+      'associate_public_ip_address': False,
       'tags': [#These tags will be used to instantiate a boto Tag class; these specific keys are expected
         { 
           'key':'Name',
