@@ -10,8 +10,7 @@ AS = {
         'instance_monitoring': False,
         'associate_public_ip_address': False,
         'user_data': 
-          '''
-          #!/bin/bash
+          '''#!/bin/bash
           apt-get update
           apt-get install -y python-pip git docker.io
           pip install --upgrade pip boto
@@ -32,14 +31,14 @@ AS = {
     'zookeeper-asg': {
       'launch_config': 'zookeeper-launchconfig',
       'default_cooldown': 300,
-      'desired_capacity': 0,
-      'max_size': 0,
-      'min_size': 0,
-      'health_check_period': 300,
+      'desired_capacity': 3,
+      'max_size': 3,
+      'min_size': 3,
+      'health_check_period': 500,
       'health_check_type': 'EC2',
       'load_balancers': [],
       'vpc_zone_identifier': ['adsabs-subnet',],
-      'associate_public_ip_address': False,
+      'associate_public_ip_address': True,
       'tags': [#These tags will be used to instantiate a boto Tag class; these specific keys are expected
         { 
           'key':'Name',
