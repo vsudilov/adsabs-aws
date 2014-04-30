@@ -16,6 +16,24 @@ class Zookeeper:
     self.metadata = boto.utils.get_instance_metadata()
     self.this_instance = next(i for i in self.c.get_only_instances() if i.id == self.metadata['instance-id'])
 
+  def _configureNetworkInterface(self):
+    P = subprocess.Popen(['dhclient','eth1'])
+    P.wait()
+
+    with open('/etc/iproute2/rt_tables','a') as fp:
+      fp.write('\n200 zookeeper\n')
+
+    commands = '''
+      ip route add default via 10.0.0.1 dev eth1 table zookeeper
+      ip rule add from {ip}/32 table zookeeper
+      ip rule add to {ip}/32 table zookeeper
+      ip route flush cache
+    '''.strip().format(ip=self.eni.private_ip_address)
+
+    for c in commands.split('\n'):
+      P = subprocess.Popen(c.strip().split())
+      P.wait()
+
   def localProvision(self,zk_dockerfile_path='/adsabs-vagrant/dockerfiles/zookeeper/'):
     '''
     idempotent provisioning of zookeeper ensemble in AWS/EC2
@@ -32,8 +50,7 @@ class Zookeeper:
 
     self.c.attach_network_interface(self.eni.id,self.this_instance.id,device_index=1)
     time.sleep(5) #Wait for OS to see the new interface
-    P = subprocess.Popen(['dhclient','eth1'])
-    P.wait()
+    self._configureNetworkInterface()
     utils.mkdir_p(zk_dockerfile_path)
     _id = self.eni.tags['Name'].split('-')[-1]
     with utils.cd(zk_dockerfile_path):
@@ -46,3 +63,4 @@ class Zookeeper:
       lines.extend(servers)
       with open('zoo.cfg','w') as fp:
         fp.write('\n'.join(lines))
+
