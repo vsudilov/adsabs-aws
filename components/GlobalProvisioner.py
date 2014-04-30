@@ -1,4 +1,5 @@
 import time
+import json
 
 import boto
 import boto.ec2
@@ -19,11 +20,10 @@ class GlobalProvisioner:
     self.config = config
 
   def orderedProvision(self):
-    #self._IAM_provision() #TODO:Figure out why AWS gives policy syntax error
+    self._IAM_provision()
     self._VPC_provision()
     self._EC2_provision()
     self._ASG_provision()
-
 
   def _ASG_provision(self):
     c = utils.connect(boto.ec2.autoscale.AutoScaleConnection)
@@ -111,4 +111,8 @@ class GlobalProvisioner:
         c.get_role(role)
         continue
       except boto.exception.BotoServerError:
-        c.create_role(role, assume_role_policy_document=properties['doc'], path=properties['path'])
+        c.create_role(role)
+        c.put_role_policy(role,'%s-policy' % role,json.dumps(properties['policy']))
+        for profile in properties['instance_profiles']:
+          c.create_instance_profile(profile)
+          c.add_role_to_instance_profile(profile,role)
