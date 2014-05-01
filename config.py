@@ -13,17 +13,27 @@ AS = {
         'user_data': 
           '''#!/bin/bash
           apt-get update
-          apt-get install -y python-pip git docker.io
+          apt-get install -y python-pip git openjdk-7-jre-headless supervisor language-pack-en-base
           pip install --upgrade pip boto
+
+          export LC_ALL="en_US.UTF-8"
+          export JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64
+          export JMXDISABLE=true
+          export JAVA_OPTS="-Xms256m -Xmx512m" #Set default java heap size, very important for good performance
 
           git clone https://github.com/adsabs/adsabs-aws /adsabs-aws
           git clone https://github.com/adsabs/adsabs-vagrant /adsabs-vagrant
           /usr/bin/python  /adsabs-aws/aws_provisioner.py --zookeeper
-          service docker.io start
-          pushd /adsabs-vagrant/dockerfiles/zookeeper/
-          docker.io build -t adsabs/zookeeper .
-          docker.io run -d --name zookeeper -p 2181:2181 -p 2888:2888 -p 3888:3888 adsabs/zookeeper
-          popd
+
+          mkdir /zookeeper
+
+          wget -q -O /opt/zookeeper-3.4.6.tar.gz http://apache.mirrors.pair.com/zookeeper/zookeeper-3.4.6/zookeeper-3.4.6.tar.gz
+          tar -xzf /opt/zookeeper-3.4.6.tar.gz -C /opt
+
+          cp /adsabs-vagrant/dockerfiles/zookeeper/zoo.cfg /opt/zookeeper-3.4.6/conf/zoo.cfg
+          cp /adsabs-vagrant/dockerfiles/zookeeper/myid /zookeeper/myid
+
+          bash /opt/zookeeper-3.4.6/bin/zkServer.sh start
           ''',
     },
   },
