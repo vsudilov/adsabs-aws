@@ -56,7 +56,7 @@ AS = {
           /usr/bin/python  /adsabs-aws/aws_provisioner.py --solr
           
           ip link add virtual0 link eth0 type macvlan mode bridge
-          ip address add 10.0.0.0/24 broadcast 10.0.0.255 dev virtual0
+          #ip address add 10.0.0.0/24 broadcast 10.0.0.255 dev virtual0 #For static IP
           dhclient virtual0
           ip link set virtual0 up
           dnsmasq
