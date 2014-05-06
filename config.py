@@ -71,6 +71,7 @@ AS = {
           iptables -t nat -A PREROUTING -p all -d $EXT_IP -j BRIDGE-VIRTUAL0
           iptables -t nat -A OUTPUT -p all -d $EXT_IP -j BRIDGE-VIRTUAL
           iptables -t nat -A BRIDGE-VIRTUAL0 -p all -j DNAT --to-destination $INT_IP
+          iptables -t nat -I POSTROUTING -p all -s $INT_IP -j SNAT --to-source $EXT_IP
           ''',
     },
   },
