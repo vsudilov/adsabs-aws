@@ -1,6 +1,8 @@
 import boto
 import boto.ec2
 
+import utils
+
 class Solr:
   def __init__(self):
     self.c = utils.connect(boto.ec2.connection.EC2Connection)
