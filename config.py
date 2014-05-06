@@ -36,8 +36,32 @@ AS = {
           bash /opt/zookeeper-3.4.6/bin/zkServer.sh start
           ''',
     },
-  },
 
+    'solr-launchconfig': {
+        'image_id': 'ami-018c9568', #ubuntu-trusty-14.04-amd64-server-20140416.1
+        'key_name': 'micro',
+        'security_groups': ['adsabs-security-group',],
+        'instance_type': 't1.micro',
+        'instance_monitoring': False,
+        'associate_public_ip_address': True,
+        'instance_profile_name': 'zookeeper-instanceprofile',
+        'user_data': 
+          '''#!/bin/bash
+          apt-get update
+          apt-get install -y python-pip git
+          pip install --upgrade pip boto
+
+          git clone https://github.com/adsabs/adsabs-aws /adsabs-aws
+          git clone https://github.com/adsabs/adsabs-vagrant /adsabs-vagrant
+          /usr/bin/python  /adsabs-aws/aws_provisioner.py --solr
+
+          pushd /adsabs-vagrant/dockerfiles/solr
+          docker build -t adsabs/solr .
+          docker run -d -p 8983:8983 --name solr adsabs/solr
+          popd
+          ''',
+    },
+  },
   'autoscale_groups':{
     'zookeeper-asg': {
       'launch_config': 'zookeeper-launchconfig',
@@ -55,6 +79,25 @@ AS = {
           'value': 'zookeeper-asg',
           'propagate_at_launch':True,
           'resource_id': 'zookeeper-asg', #Must be set to name of this ASG
+        },
+      ],
+    },
+  'solr-asg': {
+      'launch_config': 'solr-launchconfig',
+      'default_cooldown': 300,
+      'desired_capacity': 0,
+      'max_size': 0,
+      'min_size': 0,
+      'health_check_period': 300,
+      'health_check_type': 'EC2',
+      'load_balancers': ['solr-elb',],
+      'vpc_zone_identifier': ['adsabs-subnet',],
+      'tags': [#These tags will be used to instantiate a boto Tag class; these specific keys are expected
+        { 
+          'key':'Name',
+          'value': 'solr-asg',
+          'propagate_at_launch':True,
+          'resource_id': 'solr-asg', #Must be set to name of this ASG
         },
       ],
     },
@@ -76,6 +119,18 @@ VPC = {
 
 
 EC2 = {
+  'load_balancers': {
+    'solr-elb': {
+      'name' : 'solr-elb',
+      'zones': None,
+      'security_groups': ['adsabs-security-group',],
+      'subnets': ['adsabs-subnet',],
+      'listeners': [
+        (8983,8983,'TCP'),
+      ],
+    },
+  },
+
   'security_groups': {
     'adsabs-security-group': {
       'description': 'standard access from cfa',

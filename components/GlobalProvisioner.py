@@ -6,6 +6,7 @@ import boto.ec2
 import boto.iam
 import boto.vpc
 import boto.ec2.autoscale
+import boto.ec2.elb
 
 import utils
 
@@ -23,7 +24,23 @@ class GlobalProvisioner:
     self._IAM_provision()
     self._VPC_provision()
     self._EC2_provision()
+    self._ELB_provision()
     self._ASG_provision()
+
+  def _ELB_provision(self):
+    c = utils.connect(boto.ec2.elb.ELBConnection)
+    c2 = utils.connect(boto.vpc.VPCConnection)
+    c3 = utils.connect(boto.ec2.connection.EC2Connection)
+    snapshot_subnets = c2.get_all_subnets()
+    snapshot_security_groups = c3.get_all_security_groups()
+    c2.close()
+    c3.close()
+
+    for elb in set(self.config.EC2['load_balancers'].keys()).difference([i.name for i in c.get_all_load_balancers()]):
+      properties = self.config.EC2['load_balancers'][elb]
+      properties['security_groups'] = [next(j.id for j in snapshot_security_groups if j.tags.get('Name',None)==i) for i in properties['security_groups']]
+      properties['subnets'] = [next(j.id for j in snapshot_subnets if j.tags.get('Name',None)==i) for i in properties['subnets']]
+      c.create_load_balancer(**properties)
 
   def _ASG_provision(self):
     c = utils.connect(boto.ec2.autoscale.AutoScaleConnection)
