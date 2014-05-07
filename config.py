@@ -53,13 +53,14 @@ AS = {
 
           git clone https://github.com/adsabs/adsabs-aws /adsabs-aws
           git clone https://github.com/adsabs/adsabs-vagrant /adsabs-vagrant
+          
+          pushd /adsabs-vagrant/dockerfiles/solr
           /usr/bin/python  /adsabs-aws/aws_provisioner.py --solr
           
           HOST_IP=`ip addr show eth0 | grep inet | grep eth0 | awk '{print $2}' | cut -d "/" -f -1`
           iptables -t nat -A POSTROUTING -p tcp --dport 8983 -o eth0 -j SNAT --to-source $HOST_IP
           dnsmasq
           
-          pushd /adsabs-vagrant/dockerfiles/solr
           docker.io build -t adsabs/solr .
           docker.io run -d -p 8983:8983 --dns $HOST_IP --name solr adsabs/solr
           popd
