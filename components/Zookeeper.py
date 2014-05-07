@@ -8,9 +8,8 @@ import utils
 
 
 class Zookeeper:
-  def __init__(self,num_instances=3,tag='Name',tag_value='zookeeper'):
+  def __init__(self,tag='Name',tag_value='zookeeper'):
     self.c = utils.connect(boto.ec2.connection.EC2Connection)
-    self.num_instances = num_instances
     self.tag = tag
     self.tag_value = tag_value
     self.metadata = boto.utils.get_instance_metadata()
