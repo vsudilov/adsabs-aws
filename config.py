@@ -48,30 +48,21 @@ AS = {
         'user_data': 
           '''#!/bin/bash
           apt-get update
-          apt-get install -y python-pip git docker.io dnsmasq-base
+          apt-get install -y python-pip git docker.io dnsmasq-base bridge-utils udhcpc
           pip install --upgrade pip boto
 
           git clone https://github.com/adsabs/adsabs-aws /adsabs-aws
           git clone https://github.com/adsabs/adsabs-vagrant /adsabs-vagrant
           /usr/bin/python  /adsabs-aws/aws_provisioner.py --solr
           
-          ip link add virtual0 link eth0 type macvlan mode bridge
-          #ip address add 10.0.0.0/24 broadcast 10.0.0.255 dev virtual0 #For static IP
-          dhclient virtual0
-          ip link set virtual0 up
+          HOST_IP=`ip addr show eth0 | grep inet | grep eth0 | awk '{print $2}' | cut -d "/" -f -1`
+          iptables -t nat -A POSTROUTING -p tcp --dport 8983 -o eth0 -j SNAT --to-source $HOST_IP
           dnsmasq
           
           pushd /adsabs-vagrant/dockerfiles/solr
           docker.io build -t adsabs/solr .
-          docker.io run -d -p 8983:8983 --dns `ip addr show eth0 | grep inet | grep eth0 | awk '{print $2}' | cut -d "/" -f -1` --name solr adsabs/solr
+          docker.io run -d -p 8983:8983 --dns $HOST_IP --name solr adsabs/solr
           popd
-          EXT_IP=`ip addr show eth0 | grep inet | grep virtual0 | awk '{print $2}' | cut -d "/" -f -1`
-          INT_IP=`docker.io inspect solr | grep IPAddress | cut -d '"' -f 4`
-          iptables -t nat -N BRIDGE-VIRTUAL0
-          iptables -t nat -A PREROUTING -p all -d $EXT_IP -j BRIDGE-VIRTUAL0
-          iptables -t nat -A OUTPUT -p all -d $EXT_IP -j BRIDGE-VIRTUAL
-          iptables -t nat -A BRIDGE-VIRTUAL0 -p all -j DNAT --to-destination $INT_IP
-          iptables -t nat -I POSTROUTING -p all -s $INT_IP -j SNAT --to-source $EXT_IP
           ''',
     },
   },
