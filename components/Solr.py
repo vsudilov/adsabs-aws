@@ -24,7 +24,8 @@ class Solr:
       fp.write('\n'.join(['%s zookeeper%s' % (interface.private_ip_address,key) for key,interface in ENIs.iteritems()]))
 
     #Assume the cwd has been set correctly before runtime
-    with open('run.sh','r+') as fp:
+    with open('run.sh','r') as fp:
       lines = fp.readlines()
+    with open('run.sh','w') as fp:
       lines = [L if not L.startswith("H=") else "H=%s\n" % self.this_instance.private_ip_address for L in lines]
       fp.write(''.join(lines))
