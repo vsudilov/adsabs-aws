@@ -5,7 +5,7 @@ import config
 from components import Solr
 from components import Zookeeper
 from components import GlobalProvisioner
-
+from components import EB
 
 
 def main(argv=sys.argv):
@@ -28,6 +28,15 @@ def main(argv=sys.argv):
     action='store_true',
     dest='global_provision',
   )
+  parser.add_argument(
+    '--application',
+    default=None,
+    nargs=3,
+    dest='EB',
+    metavar=('name','path','version_string'),
+    help='\n'.join(['name: name of application (must have a corresponding entry in config.py)','path: path to application root directory','version_string: user generated tag to mark this upload']),
+  )
+
 
 
   args = parser.parse_args()
@@ -43,6 +52,12 @@ def main(argv=sys.argv):
   if args.solr:
     P = Solr.Solr()
     P.localProvision()
+
+  if args.EB:
+    app,path,version_string = args.EB
+    P = EB.EB(config,app,path,version_string)
+    P.localProvision()
+    P.remoteProvision()
 
 if __name__ == '__main__':
   main()

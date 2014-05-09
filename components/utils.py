@@ -1,5 +1,6 @@
 import os,sys
 import errno
+import fnmatch
 
 import boto
 import boto.ec2
@@ -20,6 +21,13 @@ def connect(ConnectionClass):
     c = ConnectionClass(aws_access_key_id=_id,aws_secret_access_key=key)
   return c
 
+
+def find_r(path,pattern):
+  matches = []
+  for root, dirnames, filenames in os.walk(path):
+    for filename in fnmatch.filter(filenames, pattern):
+      matches.append(os.path.join(root, filename))
+  return matches
 
 def find_resource_by_tag(tag,value):
   pass

@@ -7,6 +7,10 @@ import boto.iam
 import boto.vpc
 import boto.ec2.autoscale
 import boto.ec2.elb
+import boto.s3
+import boto.s3.connection
+import boto.beanstalk
+import boto.beanstalk.layer1
 
 import utils
 
@@ -22,10 +26,34 @@ class GlobalProvisioner:
 
   def orderedProvision(self):
     self._IAM_provision()
+    self._S3_provision()
     self._VPC_provision()
     self._EC2_provision()
     self._ELB_provision()
     self._ASG_provision()
+    self._EB_provision()
+
+  def _EB_provision(self):
+    c = utils.connect(boto.beanstalk.layer1.Layer1)
+    try:
+      current_apps = [a['ApplicationName'] for a in c.describe_applications()['DescribeApplicationsResponse']['DescribeApplicationsResult']['Applications']]
+    except TypeError:
+      current_apps = []
+    for app in set(self.config.EB).difference(current_apps):
+      c.create_application(app)
+      properties = self.config.EB[app]['environment']
+      env_name = properties['environment_name']
+      del properties['environment_name']
+      c.create_configuration_template(app,'%s-template' % env_name,**properties)
+      c.create_storage_location() #AWS makes this idempotent
+
+  def _S3_provision(self):
+    c = utils.connect(boto.s3.connection.S3Connection)
+    for bucket in self.config.S3:
+      if not c.lookup(bucket):
+        properties = self.config.S3[bucket]
+        c.create_bucket(bucket,**properties)
+
 
   def _ELB_provision(self):
     c = utils.connect(boto.ec2.elb.ELBConnection)

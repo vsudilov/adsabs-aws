@@ -180,6 +180,33 @@ EC2 = {
 }
 
 
+S3 = {
+  's3-beer': {
+    'headers': None,
+    'location': '',
+    'policy': None,
+  }
+}
+
+EB = {
+  'beer-test': {
+    'application_name': 'beer-test',
+    'description': '''Flask labs 2.0''',
+    's3_bucket': 's3-beer',
+    'app_config_file': 'local_config.py', #Will exit if this file isn't (recursively) found
+    'auto_create_application': False,
+    'environment': {
+      'environment_name': 'default-docker-env',
+      'solution_stack_name': '64bit Amazon Linux 2014.03 v1.0.4 running Docker 0.9.0',
+      'option_settings': [
+        ('aws:autoscaling:asg','MinSize',1),
+        ('aws:autoscaling:asg','MaxSize',1),
+        ('aws:autoscaling:launchconfiguration','InstanceType','t1.micro'),
+      ],
+    },
+  },
+}
+
 IAM = {
 
   'admin': {
