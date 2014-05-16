@@ -225,7 +225,6 @@ EB = {
         ('aws:autoscaling:asg','MaxSize',1),
         ('aws:autoscaling:launchconfiguration','InstanceType','t1.micro'),
         ('aws:autoscaling:launchconfiguration','Ec2KeyName', 'micro'),
-        ('aws:autoscaling:launchconfiguration','SecurityGroups', 'adsabs-security-group'),
       ],
     },
 
