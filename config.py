@@ -218,13 +218,15 @@ EB = {
     'app_config_file': 'local-config.json', #Will exit if this file isn't (recursively) found
     'auto_create_application': False,
     'environment': {
-      'environment_name': 'default-docker-env',
+      'environment_name': 'adsabs-bumblebee-demo',
       'solution_stack_name': '64bit Amazon Linux 2014.03 v1.0.4 running Docker 0.9.0',
       'option_settings': [
         ('aws:autoscaling:asg','MinSize',1),
         ('aws:autoscaling:asg','MaxSize',1),
         ('aws:autoscaling:launchconfiguration','InstanceType','t1.micro'),
         ('aws:autoscaling:launchconfiguration','Ec2KeyName', 'micro'),
+        ('aws:elasticbeanstalk:command','Timeout',1800),
+        #('aws:elasticbeanstalk:sns:topics','Notification Endpoint','vsudilovsky@cfa.harvard.edu')
       ],
     },
 
