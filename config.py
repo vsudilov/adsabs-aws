@@ -136,6 +136,16 @@ EC2 = {
     },
   },
 
+  'volumes': {
+    'solr-data-volume': {
+      'number': 4,
+      'zone': 'us-east-1c',
+      'volume_type': 'gp2',
+      'size': 1, #size in GB
+      'tags': {'Name': 'solr-data-volume'},
+    },
+  },
+
   'security_groups': {
     'adsabs-security-group': {
       'description': 'standard access from cfa',

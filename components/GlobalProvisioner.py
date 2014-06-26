@@ -131,6 +131,18 @@ class GlobalProvisioner:
         c.associate_address(network_interface_id=ni.id,public_ip=None,allocation_id=eip.allocation_id)
         time.sleep(1)
 
+    #EBS
+    for eb in set(self.config.EC2['volumes'].keys()).difference([i.tags.get('Name',None) for i in c.get_all_volumes()]):
+      n = self.config.EC2['volumes'][eb]['number']
+      tag = self.config.EC2['volumes'][eb]['tags']
+      del self.config.EC2['volumes'][eb]['number']
+      del self.config.EC2['volumes'][eb]['tags']
+      properties = self.config.EC2['volumes'][eb]
+      for i in range(n):
+        vol = c.create_volume(**properties)
+        c.create_tags(vol.id,tag)
+
+
   def _VPC_provision(self):
     c = utils.connect(boto.vpc.VPCConnection)
 
