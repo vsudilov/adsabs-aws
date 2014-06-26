@@ -23,6 +23,7 @@ class GlobalProvisioner:
 
   def __init__(self,config):
     self.config = config
+    self.account_id = utils.get_account_id()
 
   def orderedProvision(self):
     self._IAM_provision()
@@ -135,12 +136,21 @@ class GlobalProvisioner:
     for eb in set(self.config.EC2['volumes'].keys()).difference([i.tags.get('Name',None) for i in c.get_all_volumes()]):
       n = self.config.EC2['volumes'][eb]['number']
       tag = self.config.EC2['volumes'][eb]['tags']
+      snapshots = [i for i in c.get_all_snapshots() if i.owner_id==self.account_id and 'shardId' in i.tags]
       del self.config.EC2['volumes'][eb]['number']
       del self.config.EC2['volumes'][eb]['tags']
       properties = self.config.EC2['volumes'][eb]
       for i in range(n):
-        vol = c.create_volume(**properties)
+        shardId = (i % self.config.SolrCloud['shards']) + 1
+        if snapshots:
+          ss = next(i for i in snapshots if int(i.tags['shardId'])==shardId)
+          vol = ss.create_volume(**properties)
+        else:  
+          vol = c.create_volume(**properties)
         c.create_tags(vol.id,tag)
+        c.create_tags(vol.id,{'shardId':shardId})
+
+
 
 
   def _VPC_provision(self):

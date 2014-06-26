@@ -1,5 +1,8 @@
-#Note: Parent key must be the same as their tags['Name'] value!
+SolrCloud = {
+  'shards': 2,
+}
 
+#Note: Parent key must be the same as their tags['Name'] value!
 AS = {
   'launch_configs': {
     'zookeeper-launchconfig': {
@@ -62,7 +65,7 @@ AS = {
           dnsmasq
           
           docker.io build -t adsabs/solr .
-          docker.io run -d -p 8983:8983 --dns $HOST_IP --name solr adsabs/solr
+          docker.io run -d -p 8983:8983 --dns $HOST_IP --name solr -v /data:/data adsabs/solr
           popd
           ''',
     },
@@ -71,9 +74,9 @@ AS = {
     'zookeeper-asg': {
       'launch_config': 'zookeeper-launchconfig',
       'default_cooldown': 300,
-      'desired_capacity': 0,
-      'max_size': 0,
-      'min_size': 0,
+      'desired_capacity': 4,
+      'max_size': 3,
+      'min_size': 3,
       'health_check_period': 300,
       'health_check_type': 'EC2',
       'load_balancers': [],
@@ -90,9 +93,9 @@ AS = {
   'solr-asg': {
       'launch_config': 'solr-launchconfig',
       'default_cooldown': 300,
-      'desired_capacity': 0,
-      'max_size': 0,
-      'min_size': 0,
+      'desired_capacity': 4,
+      'max_size': 4,
+      'min_size': 4,
       'health_check_period': 300,
       'health_check_type': 'EC2',
       'load_balancers': ['solr-elb',],

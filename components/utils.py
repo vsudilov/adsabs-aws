@@ -4,6 +4,7 @@ import fnmatch
 
 import boto
 import boto.ec2
+import boto.iam
 import boto.utils
 
 '''
@@ -21,6 +22,9 @@ def connect(ConnectionClass):
     c = ConnectionClass(aws_access_key_id=_id,aws_secret_access_key=key)
   return c
 
+def get_account_id():
+  c = connect(boto.iam.connection.IAMConnection)
+  return c.get_user()['get_user_response']['get_user_result']['user']['arn'].split(':')[4]
 
 def find_r(path,pattern):
   matches = []
