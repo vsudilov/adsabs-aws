@@ -50,7 +50,7 @@ def main(argv=sys.argv):
     P.localProvision()
 
   if args.solr:
-    P = Solr.Solr(config)
+    P = Solr.Solr()
     P.localProvision()
 
   if args.EB:

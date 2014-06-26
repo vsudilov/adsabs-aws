@@ -74,9 +74,9 @@ AS = {
     'zookeeper-asg': {
       'launch_config': 'zookeeper-launchconfig',
       'default_cooldown': 300,
-      'desired_capacity': 4,
-      'max_size': 3,
-      'min_size': 3,
+      'desired_capacity': 0,
+      'max_size': 0,
+      'min_size': 0,
       'health_check_period': 300,
       'health_check_type': 'EC2',
       'load_balancers': [],
@@ -93,9 +93,9 @@ AS = {
   'solr-asg': {
       'launch_config': 'solr-launchconfig',
       'default_cooldown': 300,
-      'desired_capacity': 4,
-      'max_size': 4,
-      'min_size': 4,
+      'desired_capacity': 0,
+      'max_size': 0,
+      'min_size': 0,
       'health_check_period': 300,
       'health_check_type': 'EC2',
       'load_balancers': ['solr-elb',],
@@ -119,6 +119,7 @@ VPC = {
     'subnets': {
       'adsabs-subnet': {
         'cidr_block':'10.0.0.0/24',
+        'availability_zone': 'us-east-1c',
         'tags': {'Name':'adsabs-subnet'},
       },
     },
