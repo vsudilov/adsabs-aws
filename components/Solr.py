@@ -47,8 +47,9 @@ class Solr:
 
     with open('/etc/fstab','r') as fp:
       lines = [L.strip() for L in fp.readlines()]
-    if '/dev/xvdf       /data   ext4    defaults        0       2' not in lines:
-      lines.append('/dev/xvdf       /data   ext4    defaults        0       2')
+    L = '/dev/xvdf       /data   ext4    defaults        0       2'
+    if L not in lines:
+      lines.append(L)
     with open('/etc/fstab','w') as fp:
       fp.write('\n'.join(lines))
 
