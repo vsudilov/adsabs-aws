@@ -38,6 +38,10 @@ Usage: `python aws_provisioner.py --solr`
 
 Provisions the config files necessary for solr (including information about zookeeper). Like the zookeeper component, application provisioning is offloaded to user-data. Reads the local private IP address (for routing traffic through docker correctly) as well as the zookeeper ENIs to write to /etc/hosts.
 
+Creates an ELB to which any member of solr ASG connects.
+
+Sets up EBS on /data (restores from snapshot if available) based on shardId.
+
 #### Application (docker via ElasticBeanstalk):
 Usage: `python aws_provisioner.py --application name path version_string`
 
