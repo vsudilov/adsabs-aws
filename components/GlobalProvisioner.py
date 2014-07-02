@@ -135,7 +135,7 @@ class GlobalProvisioner:
         description=properties['description'],
         groups=groups,
         private_ip_address=properties['private_ip_address'])
-      time.sleep(2)
+      time.sleep(5)
       c.create_tags(ni.id,properties['tags'])
       if properties['EIP']:
         eip = c.allocate_address()
@@ -170,7 +170,7 @@ class GlobalProvisioner:
     for v in set(self.config.VPC.keys()).difference([i.tags.get('Name',None) for i in c.get_all_vpcs()]):
       properties = self.config.VPC[v]
       vpc = c.create_vpc(properties['cidr_block'], instance_tenancy=None, dry_run=False)
-      time.sleep(2)
+      time.sleep(5)
       c.create_tags(vpc.id,properties['tags'])
       gateway = c.create_internet_gateway()
       c.attach_internet_gateway(gateway.id,vpc.id) #TODO: Route tables?
