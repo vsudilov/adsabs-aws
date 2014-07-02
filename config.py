@@ -33,10 +33,13 @@ AS = {
           wget -q -O /opt/zookeeper-3.4.6.tar.gz http://apache.mirrors.pair.com/zookeeper/zookeeper-3.4.6/zookeeper-3.4.6.tar.gz
           tar -xzf /opt/zookeeper-3.4.6.tar.gz -C /opt
 
-          cp /adsabs-vagrant/dockerfiles/zookeeper/zoo.cfg /opt/zookeeper-3.4.6/conf/zoo.cfg
-          cp /adsabs-vagrant/dockerfiles/zookeeper/myid /zookeeper/myid
+          ln -sf /adsabs-vagrant/dockerfiles/zookeeper/zoo.cfg /opt/zookeeper-3.4.6/conf/zoo.cfg
+          ln -sf /adsabs-vagrant/dockerfiles/zookeeper/myid /zookeeper/myid
+          ln -sf /adsabs-vagrant/dockerfiles/zookeeper/zk.sh /zk.sh
+          ln -sf /adsabs-vagrant/dockerfiles/zookeeper/supervisord.conf /etc/supervisor/supervisord.conf
 
-          bash /opt/zookeeper-3.4.6/bin/zkServer.sh start
+          service supervisor stop
+          service supervisor start
           ''',
     },
 
