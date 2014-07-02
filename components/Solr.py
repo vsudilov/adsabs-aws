@@ -10,8 +10,7 @@ class Solr:
   
   def __init__(self):
     self.c = utils.connect(boto.ec2.connection.EC2Connection)
-    self.metadata = boto.utils.get_instance_metadata()
-    self.this_instance = next(i for i in self.c.get_only_instances() if i.id == self.metadata['instance-id'])
+    self.this_instance = utils.get_this_instance()
     self.shardId = self._setupVolumes()
 
   def _setupVolumes(self):

@@ -26,6 +26,12 @@ def get_account_id():
   c = connect(boto.iam.connection.IAMConnection)
   return c.get_user()['get_user_response']['get_user_result']['user']['arn'].split(':')[4]
 
+def get_this_instance():
+  c = connect(boto.ec2.connection.EC2Connection)
+  metadata = boto.utils.get_instance_metadata()
+  this_instance = next(i for i in c.get_only_instances() if i.id == self.metadata['instance-id'])
+  return this_instance
+
 def find_r(path,pattern):
   matches = []
   for root, dirnames, filenames in os.walk(path):

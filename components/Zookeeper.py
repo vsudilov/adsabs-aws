@@ -12,8 +12,7 @@ class Zookeeper:
     self.c = utils.connect(boto.ec2.connection.EC2Connection)
     self.tag = tag
     self.tag_value = tag_value
-    self.metadata = boto.utils.get_instance_metadata()
-    self.this_instance = next(i for i in self.c.get_only_instances() if i.id == self.metadata['instance-id'])
+    self.this_instance = utils.get_this_instance()
 
   def _configureNetworkInterface(self):
     P = subprocess.Popen(['dhclient','eth1'])
