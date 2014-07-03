@@ -17,7 +17,7 @@ AS = {
           '''#!/bin/bash
           apt-get update
           apt-get install -y python-pip git openjdk-7-jre-headless supervisor language-pack-en-base
-          pip install --upgrade pip boto
+          pip install --upgrade pip boto fabric
 
           export LC_ALL="en_US.UTF-8"
           export JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64
@@ -26,7 +26,15 @@ AS = {
 
           git clone https://github.com/adsabs/adsabs-aws /adsabs-aws
           git clone https://github.com/adsabs/adsabs-vagrant /adsabs-vagrant
+          git clone https://github.com/adsabs/adslogging-forwarder /adslogging-forwarder
+          
+
           /usr/bin/python  /adsabs-aws/aws_provisioner.py --zookeeper
+          /usr/bin/python  /adsabs-aws/aws_provisioner.py --adslogging-forwarder
+
+          pushd /adslogging-forwarder
+          fab build
+          popd
 
           mkdir /zookeeper
 
@@ -55,20 +63,56 @@ AS = {
           '''#!/bin/bash
           apt-get update
           apt-get install -y python-pip git docker.io dnsmasq-base bridge-utils udhcpc
-          pip install --upgrade pip boto
+          pip install --upgrade pip boto requests fabric
 
           git clone https://github.com/adsabs/adsabs-aws /adsabs-aws
           git clone https://github.com/adsabs/adsabs-vagrant /adsabs-vagrant
+          git clone https://github.com/adsabs/adslogging-forwarder /adslogging-forwarder
           
-          pushd /adsabs-vagrant/dockerfiles/solr
+          ln -sf /adsabs-aws/etc/backup-daily.py /etc/cron.daily/backup-daily.py
+
           /usr/bin/python  /adsabs-aws/aws_provisioner.py --solr
+          /usr/bin/python  /adsabs-aws/aws_provisioner.py --adslogging-forwarder
+
+          pushd /adslogging-forwarder
+          fab build
+          popd
           
           HOST_IP=`ip addr show eth0 | grep inet | grep eth0 | awk '{print $2}' | cut -d "/" -f -1`
           iptables -t nat -A POSTROUTING -p tcp --dport 8983 -o eth0 -j SNAT --to-source $HOST_IP
           dnsmasq
           
+          pushd /adsabs-vagrant/dockerfiles/solr          
           docker.io build -t adsabs/solr .
           docker.io run -d -p 8983:8983 --dns $HOST_IP --name solr -v /data:/data adsabs/solr
+          popd
+          ''',
+    },
+
+    'adslogging-launchconfig': {
+        'image_id': 'ami-018c9568', #ubuntu-trusty-14.04-amd64-server-20140416.1
+        'key_name': 'micro',
+        'security_groups': ['adsabs-security-group',],
+        'instance_type': 't1.micro',
+        'instance_monitoring': False,
+        'associate_public_ip_address': True,
+        'instance_profile_name': 'zookeeper-instanceprofile',
+        'user_data': 
+          '''#!/bin/bash
+          apt-get update
+          apt-get install -y python-pip git docker.io
+          pip install --upgrade pip boto requests fabric
+
+          git clone https://github.com/adsabs/adsabs-aws /adsabs-aws
+          git clone https://github.com/adsabs/adslogging /adslogging
+
+          /usr/bin/python  /adsabs-aws/aws_provisioner.py --adslogging
+
+          pushd /adslogging
+          pip install -r requirements.txt
+          fab all build
+          fab data:yes
+          fab all run
           popd
           ''',
     },
@@ -93,7 +137,7 @@ AS = {
         },
       ],
     },
-  'solr-asg': {
+    'solr-asg': {
       'launch_config': 'solr-launchconfig',
       'default_cooldown': 300,
       'desired_capacity': 0,
@@ -109,6 +153,25 @@ AS = {
           'value': 'solr-asg',
           'propagate_at_launch':True,
           'resource_id': 'solr-asg', #Must be set to name of this ASG
+        },
+      ],
+    },
+    'adslogging-asg': {
+      'launch_config': 'adslogging-launchconfig',
+      'default_cooldown': 300,
+      'desired_capacity': 0,
+      'max_size': 0,
+      'min_size': 0,
+      'health_check_period': 300,
+      'health_check_type': 'EC2',
+      'load_balancers': [],
+      'vpc_zone_identifier': ['adsabs-subnet',],
+      'tags': [#These tags will be used to instantiate a boto Tag class; these specific keys are expected
+        { 
+          'key':'Name',
+          'value': 'adslogging-asg',
+          'propagate_at_launch':True,
+          'resource_id': 'adslogging-asg', #Must be set to name of this ASG
         },
       ],
     },
@@ -145,7 +208,7 @@ EC2 = {
 
   'volumes': {
     'solr-data-volume': {
-      'number': 4,
+      'number': SolrCloud['shards'],
       'zone': 'us-east-1c',
       'volume_type': 'gp2',
       'size': 1, #size in GB
@@ -208,6 +271,11 @@ S3 = {
     'location': '',
     'policy': None,
   },
+  'logging-bucket': {
+    'headers': None,
+    'location': '',
+    'policy': None,
+  }
 
 }
 
