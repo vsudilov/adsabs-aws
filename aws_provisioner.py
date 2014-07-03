@@ -68,11 +68,11 @@ def main(argv=sys.argv):
     P = Solr.Solr()
     P.localProvision()
 
-  if args.adslogging
+  if args.adslogging:
     P = Adslogging.Adslogging()
     P.localProvision()
 
-  if args.adslogging_forwarder
+  if args.adslogging_forwarder:
     P = Adslogging.Adslogging()
     P.localProvision(certpath='/adslogging_forwarder/certs/')
 

@@ -100,7 +100,7 @@ AS = {
         'user_data': 
           '''#!/bin/bash
           apt-get update
-          apt-get install -y python-pip git docker.io
+          apt-get install -y python-pip git docker.io python-dev
           pip install --upgrade pip boto requests fabric
 
           git clone https://github.com/adsabs/adsabs-aws /adsabs-aws
@@ -271,7 +271,7 @@ S3 = {
     'location': '',
     'policy': None,
   },
-  'logging-bucket': {
+  'adsabs-logging': {
     'headers': None,
     'location': '',
     'policy': None,
