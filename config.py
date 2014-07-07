@@ -267,17 +267,17 @@ EC2 = {
 
 
 S3 = {
-  's3-beer': {
+  'adsabs-s3-beer': {
     'headers': None,
     'location': '',
     'policy': None,
   },
-  's3-bumblebee': {
+  'adsabs-s3-bumblebee': {
     'headers': None,
     'location': '',
     'policy': None,
   },
-  'adsabs-logging': {
+  'adsabs-s3-adslogging': {
     'headers': None,
     'location': '',
     'policy': None,
