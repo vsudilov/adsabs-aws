@@ -1,7 +1,9 @@
 #http://boto.readthedocs.org/en/latest/s3_tut.html#storing-large-data
-import math, os
+import math, os, sys
 import boto
 from filechunkio import FileChunkIO
+
+
 
 # Connect to S3
 ak = os.environ.get('AWS_ACCESS_KEY',None)
@@ -10,7 +12,11 @@ c = boto.connect_s3(aws_access_key_id=ak,aws_secret_access_key=sk)
 b = c.get_bucket('mybucket')
 
 # Get file info
-source_path = '/media/vsudilov/usbdisk/solr-index/solrIndex.tar.gz'
+try:
+  source_path = sys.argv[1]
+except IndexError:
+  sys.exit('Usage: multipart_upload.py PATH')
+  
 source_size = os.stat(source_path).st_size
 
 # Create a multipart upload request
