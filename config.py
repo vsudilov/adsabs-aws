@@ -16,8 +16,9 @@ AS = {
         'user_data': 
           '''#!/bin/bash
           apt-get update
-          apt-get install -y python-pip git openjdk-7-jre-headless supervisor language-pack-en-base
+          apt-get install -y python-pip git openjdk-7-jre-headless supervisor language-pack-en-base python-dev
           pip install --upgrade pip boto fabric
+          ln -s /usr/bin/docker.io /usr/bin/docker
 
           export LC_ALL="en_US.UTF-8"
           export JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64
@@ -27,13 +28,14 @@ AS = {
           git clone https://github.com/adsabs/adsabs-aws /adsabs-aws
           git clone https://github.com/adsabs/adsabs-vagrant /adsabs-vagrant
           git clone https://github.com/adsabs/adslogging-forwarder /adslogging-forwarder
-          
 
           /usr/bin/python  /adsabs-aws/aws_provisioner.py --zookeeper
           /usr/bin/python  /adsabs-aws/aws_provisioner.py --adslogging-forwarder
+          bash /SET_LOGSTASH_SERVER.bash
 
           pushd /adslogging-forwarder
           fab build
+          fab run:LOGSTASH_SERVER=$LOGSTASH_SERVER
           popd
 
           mkdir /zookeeper
@@ -62,8 +64,9 @@ AS = {
         'user_data': 
           '''#!/bin/bash
           apt-get update
-          apt-get install -y python-pip git docker.io dnsmasq-base bridge-utils udhcpc
+          apt-get install -y python-pip git docker.io dnsmasq-base bridge-utils udhcpc python-dev
           pip install --upgrade pip boto requests fabric
+          ln -s /usr/bin/docker.io /usr/bin/docker
 
           git clone https://github.com/adsabs/adsabs-aws /adsabs-aws
           git clone https://github.com/adsabs/adsabs-vagrant /adsabs-vagrant
@@ -73,9 +76,11 @@ AS = {
 
           /usr/bin/python  /adsabs-aws/aws_provisioner.py --solr
           /usr/bin/python  /adsabs-aws/aws_provisioner.py --adslogging-forwarder
+          bash /SET_LOGSTASH_SERVER.bash
 
           pushd /adslogging-forwarder
           fab build
+          fab run:LOGSTASH_SERVER=$LOGSTASH_SERVER
           popd
           
           HOST_IP=`ip addr show eth0 | grep inet | grep eth0 | awk '{print $2}' | cut -d "/" -f -1`
@@ -83,8 +88,8 @@ AS = {
           dnsmasq
           
           pushd /adsabs-vagrant/dockerfiles/solr          
-          docker.io build -t adsabs/solr .
-          docker.io run -d -p 8983:8983 --dns $HOST_IP --name solr -v /data:/data adsabs/solr
+          docker build -t adsabs/solr .
+          docker run -d -p 8983:8983 --dns $HOST_IP --name solr -v /data:/data adsabs/solr
           popd
           ''',
     },
@@ -102,6 +107,7 @@ AS = {
           apt-get update
           apt-get install -y python-pip git docker.io python-dev
           pip install --upgrade pip boto requests fabric
+          ln -s /usr/bin/docker.io /usr/bin/docker
 
           git clone https://github.com/adsabs/adsabs-aws /adsabs-aws
           git clone https://github.com/adsabs/adslogging /adslogging
