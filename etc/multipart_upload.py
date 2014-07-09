@@ -9,7 +9,7 @@ from filechunkio import FileChunkIO
 ak = os.environ.get('AWS_ACCESS_KEY',None)
 sk = os.environ.get('AWS_SECRET_KEY',None)
 c = boto.connect_s3(aws_access_key_id=ak,aws_secret_access_key=sk)
-b = c.get_bucket('mybucket')
+b = c.get_bucket('adsabs-solrindex')
 
 # Get file info
 try:
@@ -31,6 +31,7 @@ chunk_count = int(math.ceil(source_size / chunk_size))
 # set bytes to never exceed the original file size.
 for i in range(chunk_count + 1):
   offset = chunk_size * i
+  print float(offset)/source_size
   bytes = min(chunk_size, source_size - offset)
   with FileChunkIO(source_path, 'r', offset=offset,bytes=bytes) as fp:
     mp.upload_part_from_file(fp, part_num=i + 1)

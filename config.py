@@ -1,5 +1,6 @@
 SolrCloud = {
   'shards': 2,
+  'replication_factor': 1,
 }
 
 #Note: Parent key must be the same as their tags['Name'] value!
@@ -87,9 +88,9 @@ AS = {
           iptables -t nat -A POSTROUTING -p tcp --dport 8983 -o eth0 -j SNAT --to-source $HOST_IP
           dnsmasq
           
-          pushd /adsabs-vagrant/dockerfiles/solr          
+          pushd /adsabs-vagrant/dockerfiles/montysolr          
           docker build -t adsabs/solr .
-          docker run -d -p 8983:8983 --dns $HOST_IP --name solr -v /data:/data adsabs/solr
+          docker run -d -p 8983:8983 --dns $HOST_IP --name solr -v /data:/data adsabs/montysolr
           popd
           ''',
     },
@@ -98,7 +99,7 @@ AS = {
         'image_id': 'ami-018c9568', #ubuntu-trusty-14.04-amd64-server-20140416.1
         'key_name': 'micro',
         'security_groups': ['adsabs-security-group',],
-        'instance_type': 't1.micro',
+        'instance_type': 'm1.medium',
         'instance_monitoring': False,
         'associate_public_ip_address': True,
         'instance_profile_name': 'zookeeper-instanceprofile',
@@ -214,10 +215,10 @@ EC2 = {
 
   'volumes': {
     'solr-data-volume': {
-      'number': SolrCloud['shards'],
+      'number': SolrCloud['replication_factor']*SolrCloud['shards'],
       'zone': 'us-east-1c',
       'volume_type': 'gp2',
-      'size': 1, #size in GB
+      'size': 600/SolrCloud['shards'], #size in GB
       'tags': {'Name': 'solr-data-volume'},
     },
   },
@@ -267,17 +268,17 @@ EC2 = {
 
 
 S3 = {
-  'adsabs-s3-beer': {
+  's3-adsabs-beer': {
     'headers': None,
     'location': '',
     'policy': None,
   },
-  'adsabs-s3-bumblebee': {
+  's3-adsabs-bumblebee': {
     'headers': None,
     'location': '',
     'policy': None,
   },
-  'adsabs-s3-adslogging': {
+  's3-adsabs-adslogging': {
     'headers': None,
     'location': '',
     'policy': None,
@@ -294,7 +295,7 @@ EB = {
   #   'auto_create_application': False,
   #   'environment': {
   #     'environment_name': 'default-docker-env',
-  #     'solution_stack_name': '64bit Amazon Linux 2014.03 v1.0.4 running Docker 0.9.0',
+  #     'solution_stack_name': '64bit Amazon Linux 2014.03 v1.0.1 running Docker 1.0.0',
   #     'option_settings': [
   #       ('aws:autoscaling:asg','MinSize',1),
   #       ('aws:autoscaling:asg','MaxSize',1),
@@ -310,7 +311,7 @@ EB = {
     'auto_create_application': False,
     'environment': {
       'environment_name': 'adsabs-bumblebee-demo',
-      'solution_stack_name': '64bit Amazon Linux 2014.03 v1.0.4 running Docker 0.9.0',
+      'solution_stack_name': '64bit Amazon Linux 2014.03 v1.0.1 running Docker 1.0.0',
       'option_settings': [
         ('aws:autoscaling:asg','MinSize',1),
         ('aws:autoscaling:asg','MaxSize',1),

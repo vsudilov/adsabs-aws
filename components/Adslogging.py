@@ -26,7 +26,7 @@ class Adslogging:
     return None
     
 
-  def localProvision(self,bucket='adsabs-logging',key='adslogging_certs.tar.gz',certpath='/adslogging/dockerfiles/logstash/certs/'):
+  def localProvision(self,bucket='s3-adsabs-adslogging',key='adslogging_certs.tar.gz',certpath='/adslogging/dockerfiles/logstash/certs/'):
     utils.mkdir_p(certpath)
     b = self.c.get_bucket(bucket)
     k = b.get_key(key)
