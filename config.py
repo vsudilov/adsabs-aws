@@ -91,7 +91,7 @@ AS = {
           
           pushd /adsabs-vagrant/dockerfiles/montysolr          
           docker build -t adsabs/montysolr .
-          docker run -d -p 8983:8983 --dns $HOST_IP --name solr -v /data:/data adsabs/montysolr
+          docker run -d -p 8983:8983 --dns $HOST_IP --name montysolr -v /data:/data adsabs/montysolr
           popd
           ''',
     },
