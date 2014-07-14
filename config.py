@@ -54,11 +54,12 @@ AS = {
           ''',
     },
 
-    'solr-launchconfig': {
-        'image_id': 'ami-018c9568', #ubuntu-trusty-14.04-amd64-server-20140416.1
+    'montysolr-launchconfig': {
+       # 'image_id': 'ami-018c9568', #ubuntu-trusty-14.04-amd64-server-20140416.1
+        'image_id': 'ami-a6926dce', #Ubuntu Server 14.04 LTS (HVM), 
         'key_name': 'micro',
         'security_groups': ['adsabs-security-group',],
-        'instance_type': 't1.micro',
+        'instance_type': 'm3.large',
         'instance_monitoring': False,
         'associate_public_ip_address': True,
         'instance_profile_name': 'zookeeper-instanceprofile',
@@ -73,7 +74,7 @@ AS = {
           git clone https://github.com/adsabs/adsabs-vagrant /adsabs-vagrant
           git clone https://github.com/adsabs/adslogging-forwarder /adslogging-forwarder
           
-          ln -sf /adsabs-aws/etc/backup-daily.py /etc/cron.daily/backup-daily.py
+          #ln -sf /adsabs-aws/etc/backup-daily.py /etc/cron.daily/backup-daily.py
 
           /usr/bin/python  /adsabs-aws/aws_provisioner.py --solr
           /usr/bin/python  /adsabs-aws/aws_provisioner.py --adslogging-forwarder
@@ -89,7 +90,7 @@ AS = {
           dnsmasq
           
           pushd /adsabs-vagrant/dockerfiles/montysolr          
-          docker build -t adsabs/solr .
+          docker build -t adsabs/montysolr .
           docker run -d -p 8983:8983 --dns $HOST_IP --name solr -v /data:/data adsabs/montysolr
           popd
           ''',
@@ -144,8 +145,8 @@ AS = {
         },
       ],
     },
-    'solr-asg': {
-      'launch_config': 'solr-launchconfig',
+    'montysolr-asg': {
+      'launch_config': 'montysolr-launchconfig',
       'default_cooldown': 300,
       'desired_capacity': 0,
       'max_size': 0,
@@ -157,9 +158,9 @@ AS = {
       'tags': [#These tags will be used to instantiate a boto Tag class; these specific keys are expected
         { 
           'key':'Name',
-          'value': 'solr-asg',
+          'value': 'montysolr-asg',
           'propagate_at_launch':True,
-          'resource_id': 'solr-asg', #Must be set to name of this ASG
+          'resource_id': 'montysolr-asg', #Must be set to name of this ASG
         },
       ],
     },
