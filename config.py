@@ -7,7 +7,7 @@ SolrCloud = {
 AS = {
   'launch_configs': {
     'zookeeper-launchconfig': {
-        'image_id': 'ami-018c9568', #ubuntu-trusty-14.04-amd64-server-20140416.1
+        'image_id': 'ami-80778be8',
         'key_name': 'micro',
         'security_groups': ['adsabs-security-group',],
         'instance_type': 't1.micro',
@@ -17,7 +17,7 @@ AS = {
         'user_data': 
           '''#!/bin/bash
           apt-get update
-          apt-get install -y python-pip git openjdk-7-jre-headless supervisor language-pack-en-base python-dev
+          apt-get install -y python-pip git openjdk-7-jre-headless supervisor language-pack-en-base python-dev docker.io
           pip install --upgrade pip boto fabric
           ln -s /usr/bin/docker.io /usr/bin/docker
 
@@ -28,22 +28,23 @@ AS = {
 
           git clone https://github.com/adsabs/adsabs-aws /adsabs-aws
           git clone https://github.com/adsabs/adsabs-vagrant /adsabs-vagrant
-          git clone https://github.com/adsabs/adslogging-forwarder /adslogging-forwarder
+          #git clone https://github.com/adsabs/adslogging-forwarder /adslogging-forwarder
 
           /usr/bin/python  /adsabs-aws/aws_provisioner.py --zookeeper
-          /usr/bin/python  /adsabs-aws/aws_provisioner.py --adslogging-forwarder
-          bash /SET_LOGSTASH_SERVER.bash
+          #/usr/bin/python  /adsabs-aws/aws_provisioner.py --adslogging-forwarder
+          #bash /SET_LOGSTASH_SERVER.bash
 
-          pushd /adslogging-forwarder
-          fab build
-          fab run:LOGSTASH_SERVER=$LOGSTASH_SERVER
-          popd
+          #pushd /adslogging-forwarder
+          #fab build
+          #fab run:LOGSTASH_SERVER=$LOGSTASH_SERVER
+          #popd
 
           mkdir /zookeeper
 
           wget -q -O /opt/zookeeper-3.4.6.tar.gz http://apache.mirrors.pair.com/zookeeper/zookeeper-3.4.6/zookeeper-3.4.6.tar.gz
           tar -xzf /opt/zookeeper-3.4.6.tar.gz -C /opt
 
+          ln -sf /adsabs-vagrant/dockerfiles/zookeeper/zookeeper-env.sh /opt/zookeeper-3.4.6/conf/zookeeper-env.sh
           ln -sf /adsabs-vagrant/dockerfiles/zookeeper/zoo.cfg /opt/zookeeper-3.4.6/conf/zoo.cfg
           ln -sf /adsabs-vagrant/dockerfiles/zookeeper/myid /zookeeper/myid
           ln -sf /adsabs-vagrant/dockerfiles/zookeeper/zk.sh /zk.sh
@@ -55,11 +56,13 @@ AS = {
     },
 
     'montysolr-launchconfig': {
-       # 'image_id': 'ami-018c9568', #ubuntu-trusty-14.04-amd64-server-20140416.1
-        'image_id': 'ami-a6926dce', #Ubuntu Server 14.04 LTS (HVM), 
+#        'image_id': 'ami-018c9568', #ubuntu-trusty-14.04-amd64-server-20140416.1
+#        'image_id': 'ami-a6926dce', #Ubuntu Server 14.04 LTS (HVM), 
+        'image_id': 'ami-80778be8', #Ubuntu Server 14.04 LTS (PV), SSD Volume Type - 
         'key_name': 'micro',
         'security_groups': ['adsabs-security-group',],
         'instance_type': 'm3.large',
+#        'instance_type': 't1.micro',
         'instance_monitoring': False,
         'associate_public_ip_address': True,
         'instance_profile_name': 'zookeeper-instanceprofile',
@@ -70,10 +73,12 @@ AS = {
           pip install --upgrade pip boto requests fabric
           ln -s /usr/bin/docker.io /usr/bin/docker
 
+          pushd /adsabs-vagrant/dockerfiles/montysolr
           git clone https://github.com/adsabs/adsabs-aws /adsabs-aws
           git clone https://github.com/adsabs/adsabs-vagrant /adsabs-vagrant
           git clone https://github.com/adsabs/adslogging-forwarder /adslogging-forwarder
-          
+          popd
+
           #ln -sf /adsabs-aws/etc/backup-daily.py /etc/cron.daily/backup-daily.py
 
           /usr/bin/python  /adsabs-aws/aws_provisioner.py --solr
