@@ -35,6 +35,6 @@ class Adslogging:
     with tarfile.open(f) as tf:
       tf.extractall(path=certpath)
 
-    logstash_ip = discoverLogstash()
+    logstash_ip = self.discoverLogstash()
     with open('/SET_LOGSTASH_SERVER.bash','w') as fp:
       fp.write('export LOGSTASH_SERVER="%s:"' % logstash_ip)
