@@ -50,11 +50,13 @@ def isLeader(URL='http://localhost:8983/solr/admin/collections?action=CLUSTERSTA
 def createSnapshot():
   c = utils.connect(boto.ec2.connection.EC2Connection)
   this_instance = utils.get_this_instance()
-  volume = [v for v in c.get_all_volumes() if v.attach_data.instance_id == this_instance.id and 'solr-data-volume' in v.tags.get('Name',None)]
+  volume = [v for v in c.get_all_volumes() if v.attach_data.instance_id == this_instance.id and 'solr-data-volume' in v.tags.get('Name','']
   if len(volume) != 1:
     logger.critical('Wrong number of EBS volumes attached to instance %s' % this_instance.id)
     sys.exit(1)
-  volume[0].create_snapshot(description='%s-%s-snapshot' % (volume.tags['Name'],volume.tags['shardId']) )
+  s = volume[0].create_snapshot(description='%s-%s-snapshot' % (volume[0].tags['Name'],volume[0].tags['shardId']) )
+  s.add_tag(key='shardId',value=volume[0].tags['shardId'])
+
 
 def isActive(URL='http://localhost:8983/solr/collection1/admin/mbeans?stats=true&wt=json'):
   r = requests.get(URL)
