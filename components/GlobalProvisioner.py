@@ -23,7 +23,6 @@ class GlobalProvisioner:
 
   def __init__(self,config):
     self.config = config
-    self.account_id = utils.get_account_id()
 
   def orderedProvision(self):
     print "Provision: IAM"
@@ -93,6 +92,13 @@ class GlobalProvisioner:
       properties = self.config.AS['launch_configs'][lc]
       properties['name'] = lc
       properties['security_groups'] = [next(j.id for j in snapshot_security_groups if j.tags.get('Name',None)==i) for i in properties['security_groups']]
+      dev_sda1 = boto.ec2.blockdevicemapping.BlockDeviceType()
+      dev_sda1.size = 10
+      dev_sda1.volume_type='gp2'
+      dev_sda1.delete_on_termination=True
+      bdm = boto.ec2.blockdevicemapping.BlockDeviceMapping()
+      bdm['/dev/sda1'] = dev_sda1
+      properties['block_device_mappings'] = [bdm]
       config = boto.ec2.autoscale.launchconfig.LaunchConfiguration(**properties)
       c.create_launch_configuration(config)
 
@@ -149,13 +155,14 @@ class GlobalProvisioner:
     for eb in set(self.config.EC2['volumes'].keys()).difference([i.tags.get('Name',None) for i in c.get_all_volumes()]):
       n = self.config.EC2['volumes'][eb]['number']
       tag = self.config.EC2['volumes'][eb]['tags']
-      snapshots = [i for i in c.get_all_snapshots() if i.owner_id==self.account_id and 'shardId' in i.tags]
+      snapshots = [i for i in c.get_all_snapshots(owner='self') if 'shardId' in i.tags]
       del self.config.EC2['volumes'][eb]['number']
       del self.config.EC2['volumes'][eb]['tags']
       properties = self.config.EC2['volumes'][eb]
       for i in range(n):
         shardId = (i % self.config.SolrCloud['shards']) + 1
         if snapshots:
+          #TODO: Sort by latest date!
           ss = next(i for i in snapshots if int(i.tags['shardId'])==shardId)
           vol = ss.create_volume(**properties)
         else:  
