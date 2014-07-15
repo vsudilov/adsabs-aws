@@ -47,7 +47,7 @@ class Zookeeper:
       raise EnvironmentError, "No unallocated ENIs!"
 
     self.c.attach_network_interface(self.eni.id,self.this_instance.id,device_index=1)
-    time.sleep(5) #Wait for OS to see the new interface
+    time.sleep(15) #Wait for OS to see the new interface
     self._configureNetworkInterface()
     utils.mkdir_p(zk_dockerfile_path)
     _id = self.eni.tags['Name'].split('-')[-1]
