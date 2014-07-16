@@ -73,22 +73,21 @@ AS = {
           pip install --upgrade pip boto requests fabric
           ln -s /usr/bin/docker.io /usr/bin/docker
 
-          pushd /adsabs-vagrant/dockerfiles/montysolr
           git clone https://github.com/adsabs/adsabs-aws /adsabs-aws
           git clone https://github.com/adsabs/adsabs-vagrant /adsabs-vagrant
           git clone https://github.com/adsabs/adslogging-forwarder /adslogging-forwarder
-          popd
 
           #ln -sf /adsabs-aws/etc/backup-daily.py /etc/cron.daily/backup-daily.py
-
+          pushd /adsabs-vagrant/dockerfiles/montysolr
           /usr/bin/python  /adsabs-aws/aws_provisioner.py --solr
-          /usr/bin/python  /adsabs-aws/aws_provisioner.py --adslogging-forwarder
-          bash /SET_LOGSTASH_SERVER.bash
-
-          pushd /adslogging-forwarder
-          fab build
-          fab run:LOGSTASH_SERVER=$LOGSTASH_SERVER
           popd
+          #/usr/bin/python  /adsabs-aws/aws_provisioner.py --adslogging-forwarder
+          #bash /SET_LOGSTASH_SERVER.bash
+
+          #pushd /adslogging-forwarder
+          #fab build
+          #fab run:LOGSTASH_SERVER=$LOGSTASH_SERVER
+          #popd
           
           HOST_IP=`ip addr show eth0 | grep inet | grep eth0 | awk '{print $2}' | cut -d "/" -f -1`
           iptables -t nat -A POSTROUTING -p tcp --dport 8983 -o eth0 -j SNAT --to-source $HOST_IP
