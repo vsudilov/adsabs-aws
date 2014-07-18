@@ -24,7 +24,7 @@ class Solr:
     
     #There should be an available volume. If not, there is a more fundamental problem with the plumbing
     #This will raise StopIteration if that's the case.
-    next_available = next(i for i in volumes if i.status=='available')
+    next_available = next(i for i in volumes if i.attachment_state()!='attached')
     
     shardId = next_available.tags['shardId']
     next_available.attach(self.this_instance.id,'/dev/xvdf')
