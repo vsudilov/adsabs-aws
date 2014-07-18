@@ -20,14 +20,21 @@ class Solr:
 
     returns the shardId based on the tags on that volume
     '''
-    volumes = [i for i in self.c.get_all_volumes() if i.tags.get('Name',None) == 'solr-data-volume']
+    def getNext():
+      volumes = [i for i in self.c.get_all_volumes() if i.tags.get('Name',None) == 'solr-data-volume']
+      #There should be an available volume. If not, there is a more fundamental problem with the plumbing
+      #This will raise StopIteration if that's the case.
+      next_available = next(i for i in volumes if i.status=='available')
+      return next_available
     
-    #There should be an available volume. If not, there is a more fundamental problem with the plumbing
-    #This will raise StopIteration if that's the case.
-    next_available = next(i for i in volumes if i.attachment_state()!='attached')
-    
+    next_available = getNext()
+    try:
+      next_available.attach(self.this_instance.id,'/dev/xvdf')
+    except boto.exception.EC2ResponseError:
+      next_available = getNext()
+      next_available.attach(self.this_instance.id,'/dev/xvdf')
+
     shardId = next_available.tags['shardId']
-    next_available.attach(self.this_instance.id,'/dev/xvdf')
     next_available.update()
 
     time.sleep(5)
