@@ -1,6 +1,6 @@
 SolrCloud = {
   'shards': 2,
-  'replication_factor': 1,
+  'replication_factor': 2,
 }
 
 #Note: Parent key must be the same as their tags['Name'] value!
@@ -155,8 +155,8 @@ AS = {
       'desired_capacity': 0,
       'max_size': 0,
       'min_size': 0,
-      'health_check_period': 300,
-      'health_check_type': 'EC2',
+      'health_check_period': 900,
+      'health_check_type': 'ELB',
       'load_balancers': ['solr-elb',],
       'vpc_zone_identifier': ['adsabs-subnet',],
       'tags': [#These tags will be used to instantiate a boto Tag class; these specific keys are expected
@@ -215,6 +215,12 @@ EC2 = {
       'listeners': [
         (8983,8983,'TCP'),
       ],
+      'health_check': {
+        'interval': 20,
+        'healthy_threshold': 3,
+        'unhealthy_threshold': 5,
+        'target': 'HTTP:8983/solr/',
+      }
     },
   },
 
