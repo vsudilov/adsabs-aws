@@ -75,8 +75,10 @@ class GlobalProvisioner:
       properties = self.config.EC2['load_balancers'][elb]
       properties['security_groups'] = [next(j.id for j in snapshot_security_groups if j.tags.get('Name',None)==i) for i in properties['security_groups']]
       properties['subnets'] = [next(j.id for j in snapshot_subnets if j.tags.get('Name',None)==i) for i in properties['subnets']]
-      c.create_load_balancer(**properties)
-
+      hc = boto.ec2.elb.HealthCheck(**properties['health_check'])
+      del properties['health_check']
+      lb = c.create_load_balancer(**properties)
+      lb.configure_health_check(hc)
   def _ASG_provision(self):
     c = utils.connect(boto.ec2.autoscale.AutoScaleConnection)
     c2 = utils.connect(boto.vpc.VPCConnection)
