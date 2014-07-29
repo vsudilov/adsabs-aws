@@ -15,10 +15,11 @@ AS = {
         'instance_monitoring': False,
         'associate_public_ip_address': True,
         'instance_profile_name': 'zookeeper-instanceprofile',
-        # 'block_devices': {
-        #   'size': 10, #Size in GB
-        #   'location': '/dev/sda1',
-        # },
+        'block_devices': {
+          'size': 10, #Size in GB
+          'location': '/dev/sda1',
+          'type': 'gp2',
+        },
         'user_data': 
           '''#!/bin/bash
           wget -O - get.docker.io | sh
@@ -70,6 +71,11 @@ AS = {
         'security_groups': ['adsabs-security-group',],
         'instance_type': 'r3.xlarge',
         #'instance_type': 't2.micro',
+        'block_devices': {
+          'size': 10, #Size in GB
+          'location': '/dev/sda1',
+          'type': 'gp2',
+        },
         'instance_monitoring': False,
         'associate_public_ip_address': True,
         'instance_profile_name': 'zookeeper-instanceprofile',
@@ -121,6 +127,11 @@ AS = {
         'security_groups': ['adsabs-security-group',],
         'instance_type': 'r3.xlarge',
         #'instance_type': 't2.micro',
+        'block_devices': {
+          'size': 10, #Size in GB
+          'location': '/dev/xvda',
+          'type': 'gp2',
+        },
         'instance_monitoring': False,
         'associate_public_ip_address': True,
         'instance_profile_name': 'zookeeper-instanceprofile',
@@ -174,6 +185,11 @@ AS = {
         'key_name': 'micro',
         'security_groups': ['adsabs-security-group',],
         'instance_type': 'm1.medium',
+        'block_devices': {
+          'size': 10, #Size in GB
+          'location': '/dev/sda1',
+          'type': 'gp2',
+        },
         'instance_monitoring': False,
         'associate_public_ip_address': True,
         'instance_profile_name': 'zookeeper-instanceprofile',
