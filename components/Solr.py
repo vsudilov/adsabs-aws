@@ -46,11 +46,11 @@ class Solr:
       cmd = ['mkfs','-t','ext4','/dev/xvdf']
       P = subprocess.Popen(cmd)
       P.wait()
-    print "Warming EBS"
-    start = time.time()
-    P = subprocess.Popen(['dd','if=/dev/xvdf','of=/dev/null','bs=1M'])
-    P.wait()
-    print "Done in %0.1f seconds" % (time.time()-start)
+    # print "Warming EBS"
+    # start = time.time()
+    # P = subprocess.Popen(['dd','if=/dev/xvdf','of=/dev/null','bs=1M'])
+    # P.wait()
+    # print "dd completed in %0.1f seconds" % (time.time()-start)
     utils.mkdir_p('/data')
     cmd = ['mount','/dev/xvdf','/data']
     P = subprocess.Popen(cmd)
