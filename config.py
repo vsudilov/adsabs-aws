@@ -7,19 +7,23 @@ SolrCloud = {
 AS = {
   'launch_configs': {
     'zookeeper-launchconfig': {
-        'image_id': 'ami-80778be8',
+        'image_id': 'ami-864d84ee',
         'key_name': 'micro',
         'security_groups': ['adsabs-security-group',],
-        'instance_type': 't1.micro',
+        #'instance_type': 't1.micro',
+        'instance_type': 't2.micro',
         'instance_monitoring': False,
         'associate_public_ip_address': True,
         'instance_profile_name': 'zookeeper-instanceprofile',
+        # 'block_devices': {
+        #   'size': 10, #Size in GB
+        #   'location': '/dev/sda1',
+        # },
         'user_data': 
           '''#!/bin/bash
-          apt-get update
-          apt-get install -y python-pip git openjdk-7-jre-headless supervisor language-pack-en-base python-dev docker.io
+          wget -O - get.docker.io | sh
+          apt-get install -y python-pip git openjdk-7-jre-headless supervisor language-pack-en-base python-dev
           pip install --upgrade pip boto fabric
-          ln -s /usr/bin/docker.io /usr/bin/docker
 
           export LC_ALL="en_US.UTF-8"
           export JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64
@@ -56,26 +60,79 @@ AS = {
     },
 
     'montysolr-launchconfig': {
-#        'image_id': 'ami-018c9568', #ubuntu-trusty-14.04-amd64-server-20140416.1
-#        'image_id': 'ami-a6926dce', #Ubuntu Server 14.04 LTS (HVM), 
-        'image_id': 'ami-80778be8', #Ubuntu Server 14.04 LTS (PV), SSD Volume Type - 
+        'image_id': 'ami-864d84ee', #Ubuntu Server 14.04 LTS (HVM),  ami-8827efe0?
+        #'image_id': 'ami-0632fd6e', #debian-wheezy-amd64-hvm-2014-07-19-ebs - HVM
+        #'image_id': 'ami-0249856a', #ubuntu/images-testing/hvm-ssd/ubuntu-precise-daily-amd64-server-20140717 HVM
+        #'image_id': 'ami-b227efda', #broke
+        #'image_id': 'ami-3661a15e', #14.04 LTS amd64 hvm:ebs-ssd
+        #'image_id': 'ami-8827efe0',
         'key_name': 'micro',
         'security_groups': ['adsabs-security-group',],
-        'instance_type': 'm3.large',
-#        'instance_type': 't1.micro',
+        'instance_type': 'r3.xlarge',
+        #'instance_type': 't2.micro',
         'instance_monitoring': False,
         'associate_public_ip_address': True,
         'instance_profile_name': 'zookeeper-instanceprofile',
         'user_data': 
           '''#!/bin/bash
-          apt-get update
-          apt-get install -y python-pip git docker.io dnsmasq-base bridge-utils udhcpc python-dev
+          wget -O - get.docker.io | sh
+          apt-get install -y python-pip git dnsmasq-base bridge-utils udhcpc python-dev
           pip install --upgrade pip boto requests fabric
-          ln -s /usr/bin/docker.io /usr/bin/docker
 
           git clone https://github.com/adsabs/adsabs-aws /adsabs-aws
           git clone https://github.com/adsabs/adsabs-vagrant /adsabs-vagrant
-          git clone https://github.com/adsabs/adslogging-forwarder /adslogging-forwarder
+          #git clone https://github.com/adsabs/adslogging-forwarder /adslogging-forwarder
+
+          #ln -sf /adsabs-aws/etc/backup-daily.py /etc/cron.daily/backup-daily.py
+          pushd /adsabs-vagrant/dockerfiles/montysolr
+          /usr/bin/python  /adsabs-aws/aws_provisioner.py --solr
+          popd
+          #/usr/bin/python  /adsabs-aws/aws_provisioner.py --adslogging-forwarder
+          #bash /SET_LOGSTASH_SERVER.bash
+
+          #pushd /adslogging-forwarder
+          #fab build
+          #fab run:LOGSTASH_SERVER=$LOGSTASH_SERVER
+          #popd
+          
+          HOST_IP=`ip addr show eth0 | grep inet | grep eth0 | awk '{print $2}' | cut -d "/" -f -1`
+          iptables -t nat -A POSTROUTING -p tcp --dport 8983 -o eth0 -j SNAT --to-source $HOST_IP
+          dnsmasq
+
+          wget -nv -O /montysolr.tar https://s3.amazonaws.com/s3-adsabs-montysolr/montysolr.tar
+          docker load -i /montysolr.tar
+
+          pushd /adsabs-vagrant/dockerfiles/montysolr
+          mv Dockerfile.aws Dockerfile
+          docker build -t adsabs/montysolr:deploy .
+          docker run -d -p 8983:8983 --dns $HOST_IP --name montysolr -v /data:/data adsabs/montysolr:deploy
+          popd
+          
+          # pushd /adsabs-vagrant/dockerfiles/montysolr
+          # docker build -t adsabs/montysolr .
+          # docker run -d -p 8983:8983 --dns $HOST_IP --name montysolr -v /data:/data adsabs/montysolr
+          # popd
+          ''',
+    },
+
+    'montysolr-launchconfig-aml': {
+        'image_id': 'ami-76817c1e', #Amazon Linux AMI 2014.03.2 (HVM)
+        'key_name': 'micro',
+        'security_groups': ['adsabs-security-group',],
+        'instance_type': 'r3.xlarge',
+        #'instance_type': 't2.micro',
+        'instance_monitoring': False,
+        'associate_public_ip_address': True,
+        'instance_profile_name': 'zookeeper-instanceprofile',
+        'user_data': 
+          '''#!/bin/bash
+          yum install -y python-pip git dnsmasq bridge-utils python-dev docker
+          pip install --upgrade pip boto requests fabric
+          service docker start
+
+          git clone https://github.com/adsabs/adsabs-aws /adsabs-aws
+          git clone https://github.com/adsabs/adsabs-vagrant /adsabs-vagrant
+          #git clone https://github.com/adsabs/adslogging-forwarder /adslogging-forwarder
 
           #ln -sf /adsabs-aws/etc/backup-daily.py /etc/cron.daily/backup-daily.py
           pushd /adsabs-vagrant/dockerfiles/montysolr
@@ -93,12 +150,24 @@ AS = {
           iptables -t nat -A POSTROUTING -p tcp --dport 8983 -o eth0 -j SNAT --to-source $HOST_IP
           dnsmasq
           
-          pushd /adsabs-vagrant/dockerfiles/montysolr          
-          docker build -t adsabs/montysolr .
-          docker run -d -p 8983:8983 --dns $HOST_IP --name montysolr -v /data:/data adsabs/montysolr
+          wget -nv -O /montysolr.tar https://s3.amazonaws.com/s3-adsabs-montysolr/montysolr.tar
+          docker load -i /montysolr.tar
+
+          pushd /adsabs-vagrant/dockerfiles/montysolr
+          mv Dockerfile.aws Dockerfile
+          docker build -t adsabs/montysolr:deploy .
+          docker run -d -p 8983:8983 --dns $HOST_IP --name montysolr -v /data:/data adsabs/montysolr:deploy
           popd
+
+          #pushd /adsabs-vagrant/dockerfiles/montysolr
+          #python -c "import subprocess; subprocess.Popen(\'''docker build -t adsabs/montysolr .;docker run -d -p 8983:8983 --dns $HOST_IP --name montysolr -v /data:/data adsabs/montysolr\''',shell=True)"                         
+          #docker build -t adsabs/montysolr .
+          #docker run -d -p 8983:8983 --dns $HOST_IP --name montysolr -v /data:/data adsabs/montysolr
+          #popd
           ''',
     },
+
+
 
     'adslogging-launchconfig': {
         'image_id': 'ami-018c9568', #ubuntu-trusty-14.04-amd64-server-20140416.1
@@ -155,7 +224,7 @@ AS = {
       'desired_capacity': 0,
       'max_size': 0,
       'min_size': 0,
-      'health_check_period': 900,
+      'health_check_period': 2600,
       'health_check_type': 'ELB',
       'load_balancers': ['solr-elb',],
       'vpc_zone_identifier': ['adsabs-subnet',],
@@ -168,6 +237,28 @@ AS = {
         },
       ],
     },
+
+    'montysolr-asg-aml': {
+      'launch_config': 'montysolr-launchconfig-aml',
+      'default_cooldown': 300,
+      'desired_capacity': 0,
+      'max_size': 0,
+      'min_size': 0,
+      'health_check_period': 2600,
+      'health_check_type': 'ELB',
+      'load_balancers': ['solr-elb',],
+      'vpc_zone_identifier': ['adsabs-subnet',],
+      'tags': [#These tags will be used to instantiate a boto Tag class; these specific keys are expected
+        { 
+          'key':'Name',
+          'value': 'montysolr-asg-aml',
+          'propagate_at_launch':True,
+          'resource_id': 'montysolr-asg-aml', #Must be set to name of this ASG
+        },
+      ],
+    },
+
+
     'adslogging-asg': {
       'launch_config': 'adslogging-launchconfig',
       'default_cooldown': 300,
