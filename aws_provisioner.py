@@ -6,7 +6,7 @@ from components import Solr
 from components import Zookeeper
 from components import GlobalProvisioner
 from components import EB
-from components import Adslogging
+from components import UserScript
 
 
 def main(argv=sys.argv):
@@ -54,6 +54,20 @@ def main(argv=sys.argv):
       ]),
   )
 
+  parser.add_argument(
+    '--user-script',
+    default=None,
+    nargs=3,
+    dest='user_script',
+    metavar=('instance tags','ssh key','script'),
+    help='\n'.join([
+      'instances_tags: instances to connect to defined by tags ("Key:Value")',
+      'ssh_key: path to ssh key',
+      'script: path to script to run',
+      ]),
+  )
+
+
   args = parser.parse_args()
 
   if args.global_provision:
@@ -81,6 +95,11 @@ def main(argv=sys.argv):
     P = EB.EB(config,app,path,version_string)
     P.localProvision()
     P.remoteProvision()
+
+  if args.user_script:
+    tags,key,script = args.user_script
+    P = UserScript.UserScript(tags,key,script)
+    P.localProvision()
 
 if __name__ == '__main__':
   main()

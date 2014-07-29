@@ -94,13 +94,14 @@ class GlobalProvisioner:
       properties = self.config.AS['launch_configs'][lc]
       properties['name'] = lc
       properties['security_groups'] = [next(j.id for j in snapshot_security_groups if j.tags.get('Name',None)==i) for i in properties['security_groups']]
-      #dev_sda1 = boto.ec2.blockdevicemapping.BlockDeviceType()
-      #dev_sda1.size = 10
-      #dev_sda1.volume_type='gp2'
-      #dev_sda1.delete_on_termination=True
-      #bdm = boto.ec2.blockdevicemapping.BlockDeviceMapping()
-      #bdm['/dev/sda1'] = dev_sda1
-      #properties['block_device_mappings'] = [bdm]
+      bd = boto.ec2.blockdevicemapping.BlockDeviceType()
+      bd.size = properties['block_devices']['size']
+      bd.volume_type = properties['block_devices']['type']
+      bdm = boto.ec2.blockdevicemapping.BlockDeviceMapping()
+      bdm[properties['block_devices']['location']] = bd
+      properties['block_device_mappings'] = [bdm]
+      del properties['block_devices']
+
       config = boto.ec2.autoscale.launchconfig.LaunchConfiguration(**properties)
       c.create_launch_configuration(config)
 
