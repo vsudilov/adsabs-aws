@@ -59,7 +59,7 @@ def main(argv=sys.argv):
     default=None,
     nargs=3,
     dest='user_script',
-    metavar=('instance tags','ssh key','script'),
+    metavar=('instance_tags','ssh_key','script'),
     help='\n'.join([
       'instances_tags: instances to connect to defined by tags ("Key:Value")',
       'ssh_key: path to ssh key',
