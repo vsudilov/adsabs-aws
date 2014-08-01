@@ -1,5 +1,5 @@
 SolrCloud = {
-  'shards': 2,
+  'shards': 1,
   'replication_factor': 2,
 }
 
@@ -69,7 +69,7 @@ AS = {
         #'image_id': 'ami-8827efe0',
         'key_name': 'micro',
         'security_groups': ['adsabs-security-group',],
-        'instance_type': 'r3.xlarge',
+        'instance_type': 'r3.4xlarge',
         #'instance_type': 't2.micro',
         'block_devices': {
           'size': 10, #Size in GB
@@ -424,7 +424,7 @@ EB = {
   'bumblebee': {
     'application_name': 'bumblebee',
     'description': '''Bumblebee-ADS''',
-    's3_bucket': 's3-bumblebee',
+    's3_bucket': 's3-adsabs-bumblebee',
     'app_config_file': 'local-config.json', #Will exit if this file isn't (recursively) found
     'auto_create_application': False,
     'environment': {
@@ -433,7 +433,7 @@ EB = {
       'option_settings': [
         ('aws:autoscaling:asg','MinSize',1),
         ('aws:autoscaling:asg','MaxSize',1),
-        ('aws:autoscaling:launchconfiguration','InstanceType','t1.micro'),
+        ('aws:autoscaling:launchconfiguration','InstanceType','t2.micro'),
         ('aws:autoscaling:launchconfiguration','Ec2KeyName', 'micro'),
         ('aws:elasticbeanstalk:command','Timeout',1800),
         #('aws:elasticbeanstalk:sns:topics','Notification Endpoint','vsudilovsky@cfa.harvard.edu')
