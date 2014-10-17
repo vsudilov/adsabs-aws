@@ -1,6 +1,6 @@
 SolrCloud = {
   'shards': 1,
-  'replication_factor': 2,
+  'replication_factor': 1,
 }
 
 #Note: Parent key must be the same as their tags['Name'] value!
@@ -70,7 +70,6 @@ AS = {
         'key_name': 'micro',
         'security_groups': ['adsabs-security-group',],
         'instance_type': 'r3.4xlarge',
-        #'instance_type': 't2.micro',
         'block_devices': {
           'size': 10, #Size in GB
           'location': '/dev/sda1',
@@ -105,11 +104,7 @@ AS = {
           iptables -t nat -A POSTROUTING -p tcp --dport 8983 -o eth0 -j SNAT --to-source $HOST_IP
           dnsmasq
 
-          wget -nv -O /montysolr.tar https://s3.amazonaws.com/s3-adsabs-montysolr/montysolr.tar
-          docker load -i /montysolr.tar
-
           pushd /adsabs-vagrant/dockerfiles/montysolr
-          mv Dockerfile.aws Dockerfile
           docker build -t adsabs/montysolr:deploy .
           docker run -d -p 8983:8983 --dns $HOST_IP --name montysolr -v /data:/data adsabs/montysolr:deploy
           popd
@@ -161,11 +156,7 @@ AS = {
           iptables -t nat -A POSTROUTING -p tcp --dport 8983 -o eth0 -j SNAT --to-source $HOST_IP
           dnsmasq
           
-          wget -nv -O /montysolr.tar https://s3.amazonaws.com/s3-adsabs-montysolr/montysolr.tar
-          docker load -i /montysolr.tar
-
           pushd /adsabs-vagrant/dockerfiles/montysolr
-          mv Dockerfile.aws Dockerfile
           docker build -t adsabs/montysolr:deploy .
           docker run -d -p 8983:8983 --dns $HOST_IP --name montysolr -v /data:/data adsabs/montysolr:deploy
           popd
@@ -304,7 +295,7 @@ VPC = {
     'subnets': {
       'adsabs-subnet': {
         'cidr_block':'10.0.0.0/24',
-        'availability_zone': 'us-east-1c',
+        'availability_zone': 'us-east-1b',
         'tags': {'Name':'adsabs-subnet'},
       },
     },
@@ -334,7 +325,7 @@ EC2 = {
   'volumes': {
     'solr-data-volume': {
       'number': SolrCloud['replication_factor']*SolrCloud['shards'],
-      'zone': 'us-east-1c',
+      'zone': 'us-east-1b',
       'volume_type': 'gp2',
       'size': 600/SolrCloud['shards'], #size in GB
       'tags': {'Name': 'solr-data-volume'},
@@ -386,6 +377,11 @@ EC2 = {
 
 
 S3 = {
+  's3-adsabs-adsws': {
+    'headers': None,
+    'location': '',
+    'policy': None,
+  },
   's3-adsabs-beer': {
     'headers': None,
     'location': '',
@@ -405,46 +401,53 @@ S3 = {
 }
 
 EB = {
-  # 'beer-test': {
-  #   'application_name': 'beer-test',
-  #   'description': '''Flask labs 2.0''',
-  #   's3_bucket': 's3-beer',
-  #   'app_config_file': 'local_config.py', #Will exit if this file isn't (recursively) found
-  #   'auto_create_application': False,
-  #   'environment': {
-  #     'environment_name': 'default-docker-env',
-  #     'solution_stack_name': '64bit Amazon Linux 2014.03 v1.0.1 running Docker 1.0.0',
-  #     'option_settings': [
-  #       ('aws:autoscaling:asg','MinSize',1),
-  #       ('aws:autoscaling:asg','MaxSize',1),
-  #       ('aws:autoscaling:launchconfiguration','InstanceType','t1.micro'),
-  #     ],
-  #   },
 
   'bumblebee': {
     'application_name': 'bumblebee',
-    'description': '''Bumblebee-ADS''',
+    'description': '''Bumblebee interface''',
     's3_bucket': 's3-adsabs-bumblebee',
     'app_config_file': 'local-config.json', #Will exit if this file isn't (recursively) found
     'auto_create_application': False,
     'environment': {
-      'environment_name': 'adsabs-bumblebee-demo',
-      'solution_stack_name': '64bit Amazon Linux 2014.03 v1.0.1 running Docker 1.0.0',
+      'environment_name': 'adsabs-bumblebee',
+      'solution_stack_name': '64bit Amazon Linux 2014.09 v1.0.9 running Docker 1.2.0',
       'option_settings': [
         ('aws:autoscaling:asg','MinSize',1),
         ('aws:autoscaling:asg','MaxSize',1),
         ('aws:autoscaling:launchconfiguration','InstanceType','t2.micro'),
         ('aws:autoscaling:launchconfiguration','Ec2KeyName', 'micro'),
         ('aws:elasticbeanstalk:command','Timeout',1800),
+        ('aws:elasticbeanstalk:application:environment','API_ENDPOINT','fake')
         #('aws:elasticbeanstalk:sns:topics','Notification Endpoint','vsudilovsky@cfa.harvard.edu')
       ],
     },
+
+  'adsws': {
+    'application_name': 'adsws',
+    'description': '''ADS API''',
+    's3_bucket': 's3-adsabs-adsws',
+    'app_config_file': 'adsws.local_config.py', #Will exit if this file isn't (recursively) found
+    'auto_create_application': False,
+    'environment': {
+      'environment_name': 'adsabs-adsws',
+      'solution_stack_name': '64bit Amazon Linux 2014.09 v1.0.9 running Docker 1.2.0',
+      'option_settings': [
+        ('aws:autoscaling:asg','MinSize',1),
+        ('aws:autoscaling:asg','MaxSize',1),
+        ('aws:autoscaling:launchconfiguration','InstanceType','t2.micro'),
+        ('aws:autoscaling:launchconfiguration','Ec2KeyName', 'micro'),
+        ('aws:elasticbeanstalk:command','Timeout',1800),
+        ('aws:elasticbeanstalk:application:environment','POSTGRES_HOST','fake')
+        ('aws:elasticbeanstalk:application:environment','POSTGRES_PORT','fake')
+        ('aws:elasticbeanstalk:application:environment','SOLR_ENDPOINT','fake')
+        #('aws:elasticbeanstalk:sns:topics','Notification Endpoint','vsudilovsky@cfa.harvard.edu')
+      ],
+    },    
 
   },
 }
 
 IAM = {
-
   'admin': {
     'instance_profiles':['zookeeper-instanceprofile',],
     'policy': {
