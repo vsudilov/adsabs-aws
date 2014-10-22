@@ -1,6 +1,6 @@
 SolrCloud = {
   'shards': 1,
-  'replication_factor': 1,
+  'replication_factor': 2,
 }
 
 #Note: Parent key must be the same as their tags['Name'] value!
@@ -295,7 +295,7 @@ VPC = {
     'subnets': {
       'adsabs-subnet': {
         'cidr_block':'10.0.0.0/24',
-        'availability_zone': 'us-east-1b',
+        'availability_zone': 'us-east-1c',
         'tags': {'Name':'adsabs-subnet'},
       },
     },
@@ -325,7 +325,7 @@ EC2 = {
   'volumes': {
     'solr-data-volume': {
       'number': SolrCloud['replication_factor']*SolrCloud['shards'],
-      'zone': 'us-east-1b',
+      'zone': 'us-east-1c',
       'volume_type': 'gp2',
       'size': 600/SolrCloud['shards'], #size in GB
       'tags': {'Name': 'solr-data-volume'},
@@ -421,6 +421,7 @@ EB = {
         #('aws:elasticbeanstalk:sns:topics','Notification Endpoint','vsudilovsky@cfa.harvard.edu')
       ],
     },
+  },
 
   'adsws': {
     'application_name': 'adsws',
@@ -437,13 +438,12 @@ EB = {
         ('aws:autoscaling:launchconfiguration','InstanceType','t2.micro'),
         ('aws:autoscaling:launchconfiguration','Ec2KeyName', 'micro'),
         ('aws:elasticbeanstalk:command','Timeout',1800),
-        ('aws:elasticbeanstalk:application:environment','POSTGRES_HOST','fake')
-        ('aws:elasticbeanstalk:application:environment','POSTGRES_PORT','fake')
-        ('aws:elasticbeanstalk:application:environment','SOLR_ENDPOINT','fake')
+        ('aws:elasticbeanstalk:application:environment','POSTGRES_HOST','fake'),
+        ('aws:elasticbeanstalk:application:environment','POSTGRES_PORT','fake'),
+        ('aws:elasticbeanstalk:application:environment','SOLR_ENDPOINT','fake'),
         #('aws:elasticbeanstalk:sns:topics','Notification Endpoint','vsudilovsky@cfa.harvard.edu')
       ],
     },    
-
   },
 }
 
