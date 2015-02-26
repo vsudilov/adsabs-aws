@@ -1,3 +1,13 @@
+# DEPRECATION NOTICE #
+# DEPRECATION NOTICE #
+
+This code is deprecated; it continues to live as a reference only.
+
+# DEPRECATION NOTICE #
+# DEPRECATION NOTICE #
+
+
+
 # adsabs-aws
 Infrastructure provisioning for AWS/EC2. Requires authentication via IAM profiles (preferred) or `AWS_ACCESS_KEY` and `AWS_SECRET_KEY` set as environmental variables. Essentially, this is a python remote-side implementation of Amazon OpsWorks.
 
