@@ -23,14 +23,14 @@ class UserScript:
   def run(self):
     instances = [i for i in self.c.get_only_instances() if i.tags.get(self.tags['key'],None) == self.tags['value'] and i.state=="running"]
     for i in instances:
-      rsync = "rsync -vrPa -e 'ssh -C -i %{key}' %{script} %{user}@%{remote}:/tmp/%{tmpfile}".format(
+      rsync = "rsync -vrPa -e 'ssh -C -i {key}' {script} {user}@{remote}:/tmp/{tmpfile}".format(
         key=self.key,
         user=self.user,
         script=self.script,
         remote=i.ip_address,
         tmpfile=self.tmpfile
       )
-      ssh = "ssh -i %{key} %{user}@%{remote} 'bash /tmp/%{tmpfile}'".format(
+      ssh = "ssh -i {key} {user}@{remote} 'bash /tmp/{tmpfile}'".format(
         key=self.key,
         remote=i.ip_address,
         tmpfile=self.tmpfile,
