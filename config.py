@@ -293,10 +293,15 @@ VPC = {
     'cidr_block': '10.0.0.0/16',
     'tags': {'Name': 'adsabs'},
     'subnets': {
-      'adsabs-subnet': {
+      'adsabs-subnet-1c': {
         'cidr_block':'10.0.0.0/24',
         'availability_zone': 'us-east-1c',
-        'tags': {'Name':'adsabs-subnet'},
+        'tags': {'Name':'adsabs-subnet-1c'},
+      },
+      'adsabs-subnet-1b': {
+        'cidr_block':'10.0.1.0/24',
+        'availability_zone': 'us-east-1b',
+        'tags': {'Name':'adsabs-subnet-1b'},
       },
     },
   },
