@@ -8,23 +8,23 @@ from components import UserScript
 
 def main(argv=sys.argv):
   parser = argparse.ArgumentParser()
-  g = parser.add_mutually_exclusive_group()
+  g = parser.add_mutually_exclusive_group(required=True)
   g.add_argument(
     '--get-instance-tag',
     default=None,
     nargs=1,
-    dest='get',
+    dest='get_instance_tag',
+    metavar=('tag'),
     help='\n'.join([
       'tag: The tag name to query on this instance (returns VALUE in TAG:VALUE)',
     ]),
   )
-
   g.add_argument(
     '--eni',
     default=None,
     nargs=1,
     dest='eni',
-    metavar=('instance_tags',),
+    metavar=('instance_tags'),
     help='\n'.join([
       'instances_tags: instances to connect to defined by tags ("Key:Value")',
     ]),
@@ -32,7 +32,7 @@ def main(argv=sys.argv):
   g.add_argument(
     '--user-script',
     default=None,
-    nargs=3,
+    nargs=4,
     dest='user_script',
     metavar=('instance_tags','ssh_key','script','ec2_user'),
     help='\n'.join([
