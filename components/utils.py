@@ -1,6 +1,7 @@
 import os,sys
 import errno
 import fnmatch
+import time
 
 import boto
 import boto.ec2
@@ -67,3 +68,26 @@ class cd:
 
     def __exit__(self, etype, value, traceback):
         os.chdir(self.savedPath)
+
+class SyncPollWhileFalse:
+  '''
+  Class that enables the (blocking) polling of a function until 
+  it returns a value that evaluates to True
+  '''
+  def __init__(self,f,f_args=[],f_kwargs={},max_tries=5,poll_interval=2):
+    self.f = f
+    self.f_args = f_args
+    self.f_kwargs = f_kwargs
+    self.max_tries = max_tries
+    self.poll_interval = poll_interval
+
+  def poll(self):
+    tries = 0
+    while 1:
+      tries += 1
+      result = self.f(*self.f_args,**self.f_kwargs)
+      if result or tries >= self.max_tries:
+        return result
+      time.sleep(self.poll_interval)
+
+

@@ -23,10 +23,10 @@ def main(argv=sys.argv):
     '--eni',
     default=None,
     nargs=1,
-    dest='eni',
-    metavar=('instance_tags'),
+    dest='eni_tag',
+    metavar=('eni_tag'),
     help='\n'.join([
-      'instances_tags: instances to connect to defined by tags ("Key:Value")',
+      'eni_tag: ENIs to provision defined by a single tag ("Key:Value")',
     ]),
   )
   g.add_argument(
@@ -34,26 +34,27 @@ def main(argv=sys.argv):
     default=None,
     nargs=4,
     dest='user_script',
-    metavar=('instance_tags','ssh_key','script','ec2_user'),
+    metavar=('instance_tag','ssh_key','script','ec2_user'),
     help='\n'.join([
-      'instances_tags: instances to connect to defined by tags ("Key:Value")',
+      'instances_tag: instances to connect to defined by a single tag ("Key:Value")',
       'ssh_key: path to ssh key',
       'script: path to script to run',
       'ec2_user: ec2 user (ubuntu for Ubuntu, ec2-user for amazon-linux or debian)',
     ]),
   )
-
   args = parser.parse_args()
+
   if args.get_instance_tag:
     sys.stdout.write(utils.get_instance_tag_value(args.get_instance_tag[0]))
 
-  if args.eni:
-    P = ENIProvisioner(tags)
+  if args.eni_tag:
+    tag = args.eni_tag[0]
+    P = ENIProvisioner(tag)
     P.provision()
 
   if args.user_script:
-    tags,key,script = args.user_script
-    P = UserScript(tags,key,script,ec2_user)
+    tag,key,script = args.user_script
+    P = UserScript(tag,key,script,ec2_user)
     P.run()
 
 if __name__ == '__main__':

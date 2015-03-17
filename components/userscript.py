@@ -9,20 +9,28 @@ import utils
 
 class UserScript:
   
-  def __init__(self,tags,key,script,ec2_user):
-    self.c = utils.connect(boto.ec2.connection.EC2Connection)
-    tags = tags.split(':')
-    self.tags = {'key':tags[0],'value':tags[1]}
+  def __init__(self,tag,key,script,ec2_user):
+    tag = tags.split(':')
+    self.tag = {'key':tag[0],'value':tag[1]}
     self.key = os.path.abspath(key)
     self.script = os.path.abspath(script)
     self.tmpfile = 'userscript_{time}.sh'.format(
       time=datetime.datetime.utcnow().strftime('%m.%d.%Y_%H:%M:%S')
     )
     self.user = ec2_user
+    self.c = utils.connect(boto.ec2.connection.EC2Connection)
+    
+  def get_instances(self):
+    return self.c.get_only_instances(
+      filters={
+        'tag-name':self.tag['key'],
+        'tag-value':self.tag['value'],
+        'instance-state-name': 'running',
+        }
+    )
 
   def run(self):
-    instances = [i for i in self.c.get_only_instances() if i.tags.get(self.tags['key'],None) == self.tags['value'] and i.state=="running"]
-    for i in instances:
+    for i in self.get_instances():
       rsync = "rsync -vrPa -e 'ssh -C -i {key}' {script} {user}@{remote}:/tmp/{tmpfile}".format(
         key=self.key,
         user=self.user,
