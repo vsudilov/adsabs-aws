@@ -8,3 +8,4 @@ class ENIProvisioner:
     self.tags = {'key':tags[0],'value':tags[1]}
     self.key = os.path.abspath(key)
   def provision(self):
+    pass

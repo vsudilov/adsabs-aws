@@ -1,10 +1,9 @@
 import sys,os
 import argparse
-import config
 
 from components import utils
-from components import Solr
 from components import ENIProvisioner
+from components import UserScript
 
 
 def main(argv=sys.argv):
