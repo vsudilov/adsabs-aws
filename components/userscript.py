@@ -9,16 +9,16 @@ import utils
 
 class UserScript:
   
-  def __init__(self,tags,key,script,user='ubuntu'):
+  def __init__(self,tags,key,script,ec2_user):
     self.c = utils.connect(boto.ec2.connection.EC2Connection)
     tags = tags.split(':')
     self.tags = {'key':tags[0],'value':tags[1]}
     self.key = os.path.abspath(key)
     self.script = os.path.abspath(script)
-    self.tmpfile = 'userscript_%{time}.sh'.format(
+    self.tmpfile = 'userscript_{time}.sh'.format(
       time=datetime.datetime.utcnow().strftime('%m.%d.%Y_%H:%M:%S')
     )
-    self.user = user
+    self.user = ec2_user
 
   def run(self):
     instances = [i for i in self.c.get_only_instances() if i.tags.get(self.tags['key'],None) == self.tags['value'] and i.state=="running"]

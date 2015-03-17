@@ -12,15 +12,21 @@ Define general tasks our deployment in AWS
 '''
 
 def connect(ConnectionClass):
-  _id = os.environ.get('AWS_ACCESS_KEY',None)
-  key = os.environ.get('AWS_SECRET_KEY',None)
   try:
     #auth is automatically handled via IAM in an EC2 instance; no need to supply credentials
-    c = ConnectionClass()
+    return ConnectionClass()
   except boto.exception.NoAuthHandlerFound:
     #Fallback: either we aren't in an EC2 instance, or no IAM group has been set
-    c = ConnectionClass(aws_access_key_id=_id,aws_secret_access_key=key)
-  return c
+    _id = os.environ.get('AWS_ACCESS_KEY',None)
+    key = os.environ.get('AWS_SECRET_KEY',None)
+    return ConnectionClass(aws_access_key_id=_id,aws_secret_access_key=key)
+
+def get_instance_tag_value(tag):
+  this_instance = get_this_instance()
+  try:
+    return this_instance.tags[tag]
+  except KeyError:
+    raise KeyError('A tag named {tag} on {instance} does not exist'.format(tag=tag,instance=this_instance.id))
 
 def get_account_id():
   c = connect(boto.iam.connection.IAMConnection)
@@ -40,7 +46,7 @@ def find_r(path,pattern):
   return matches
 
 def find_resource_by_tag(tag,value):
-  pass
+  raise NotImplementedError
 
 def mkdir_p(path):
     try:
