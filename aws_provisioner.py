@@ -45,7 +45,7 @@ def main(argv=sys.argv):
 
   args = parser.parse_args()
   if args.get_instance_tag:
-    sys.stdout.write(utils.get_instance_tag_value(args.get_instance_tag))
+    sys.stdout.write(utils.get_instance_tag_value(args.get_instance_tag[0]))
 
   if args.eni:
     P = ENIProvisioner(tags)
