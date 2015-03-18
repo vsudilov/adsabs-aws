@@ -7,6 +7,7 @@ class ENIProvisioner:
     tag = tag.split(':')
     self.tag = {'key':tag[0],'value':tag[1]}
     self.c = utils.connect(boto.ec2.EC2Connection)
+    self.this_instance = utils.get_this_instance()
 
   def get_eni_pool(self):
     '''
@@ -17,35 +18,26 @@ class ENIProvisioner:
       filters={
         'tag-key':self.tag['key'],
         'tag-value':self.tag['value'],
-        'attachment.status':'detached',
+        'status':'available',
+        'availability-zone':self.this_instance.placement,
         }
     )
-    addresses = []
-    for eni in enis:
-      addresses.extend(
-        self.c.get_all_addresses(
-          filters={
-            'network-interface-id':eni.id
-          }
-        )
-      )
-    return addresses
+    return enis
 
   def provision(self):
-    this_instance = utils.get_this_instance()
 
     poller = utils.SyncPollWhileFalse(self.get_eni_pool,max_tries=2,poll_interval=3)
-    addresses = poller.poll()
+    eni_pool = poller.poll()
 
-    if not addresses:
+    if not eni_pool:
       raise Exception("No suitable ENI/EIPs were found")
 
-    target = addresses[0]
+    target = eni_pool[0]
     poller = utils.SyncPollWhileFalse(
-      target.associate,
+      target.attach,
       f_kwargs={
-        'instance_id': this_instance.id,
-        'allow_reassociation': True,
+        'instance_id': self.this_instance.id,
+        'device_index': 1,
       },
       max_tries = 3,
       poll_interval = 5,
