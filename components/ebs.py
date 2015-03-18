@@ -27,33 +27,36 @@ class EBSProvisioner:
     )
     return volumes
 
-  def mount(self):
+  def mount_device(self):
     utils.mkdir_p(self.mount)
     cmd = ['mount',self.device,self.mount]
-    P = subprocess.Popen(cmd)
-    P.wait()
+    retval = subprocess.Popen(cmd).wait()
+    if retval==0:
+      return True
 
   def update_fstab(self):
     with open('/etc/fstab','r') as fp:
       lines = [L.strip() for L in fp.readlines()]
-
     L = '{device} {mount} ext4 defaults,nofail 0 2'.format(device=self.device,mount=self.mount)
     if L not in lines:
       lines.append(L)
-
     with open('/etc/fstab','w') as fp:
       fp.write('\n'.join(lines))
 
 
   def format(self):
-    cmd = ['file','-s',self.mount]
+    cmd = ['file','-s',self.device]
     P = subprocess.Popen(cmd,stdout=subprocess.PIPE)
-    P.wait()
+    retval = P.wait()
     o = P.stdout.readline().strip()
-    if o == '{mount}: data'.format(mount=self.mount):
-      cmd = ['mkfs','-t','ext4',self.mount]
-      P = subprocess.Popen(cmd)
-      P.wait()
+    if '(No such file or directory)' in o or retval != 0:
+      return False
+    if o == '{device}: data'.format(device=self.device):
+      cmd = ['mkfs','-t','ext4',self.device]
+      retval = subprocess.Popen(cmd).wait()
+      if retval != 0:
+        return False
+    return True
 
   def provision(self):
 
@@ -64,6 +67,7 @@ class EBSProvisioner:
       raise Exception("No suitable EBS volumes were found")
 
     target = ebs_pool[0]
+
     poller = utils.SyncPollWhileFalse(
       target.attach,
       f_kwargs={
@@ -74,13 +78,20 @@ class EBSProvisioner:
       poll_interval = 5,
     )
     success = poller.poll()
-
     if not success:
       raise Exception("Could not attach {ebs}".format(ebs=target.id))
 
-    self.mount()
+    poller = utils.SyncPollWhileFalse(self.format,max_tries=3,poll_interval=5)
+    success = poller.poll()
+    if not success:
+      raise Exception("Could not format the device")
+
+    poller = utils.SyncPollWhileFalse(self.mount_device,max_tries=3,poll_interval=5)
+    success = poller.poll()
+    if not success:
+      raise Exception("Could mount {dev} on {mnt}".format(dev=self.device,mnt=self.mount))
+
     self.update_fstab()
-    self.format()
 
 
 

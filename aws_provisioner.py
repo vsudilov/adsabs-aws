@@ -4,7 +4,7 @@ import argparse
 from components import utils
 from components import ENIProvisioner
 from components import UserScript
-
+from components import EBSProvisioner
 
 def main(argv=sys.argv):
   parser = argparse.ArgumentParser()
