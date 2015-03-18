@@ -26,9 +26,21 @@ def main(argv=sys.argv):
     dest='eni_tag',
     metavar=('eni_tag'),
     help='\n'.join([
-      'eni_tag: ENIs to provision defined by a single tag ("Key:Value")',
+      'eni_tag: ENI to attach, defined by a single tag ("Key:Value")',
     ]),
   )
+
+  g.add_argument(
+    '--ebs',
+    default=None,
+    nargs=1,
+    dest='ebs_tag',
+    metavar=('ebs_tag'),
+    help='\n'.join([
+      'ebs_tag: EBS volume to attach, defined by a single tag ("Key:Value")',
+    ]),
+  )
+
   g.add_argument(
     '--user-script',
     default=None,
@@ -51,6 +63,11 @@ def main(argv=sys.argv):
     tag = args.eni_tag[0]
     P = ENIProvisioner(tag)
     P.provision()
+
+  if args.ebs_tag:
+    tag = args.ebs_tag[0]
+    P = EBSProvisioner(tag)
+    P.provision()  
 
   if args.user_script:
     tag,key,script = args.user_script
