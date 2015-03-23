@@ -44,14 +44,15 @@ def main(argv=sys.argv):
   g.add_argument(
     '--user-script',
     default=None,
-    nargs=4,
+    nargs=5,
     dest='user_script',
-    metavar=('instance_tag','ssh_key','script','ec2_user'),
+    metavar=('instance_tag','ssh_key','ec2_user','script','script_args'),
     help='\n'.join([
       'instances_tag: instances to connect to defined by a single tag ("Key:Value")',
       'ssh_key: path to ssh key',
-      'script: path to script to run',
       'ec2_user: ec2 user (ubuntu for Ubuntu, ec2-user for amazon-linux or debian)',
+      'script: path to script to run',
+      'script_args: args to pass to the script',
     ]),
   )
   args = parser.parse_args()
@@ -70,8 +71,8 @@ def main(argv=sys.argv):
     P.provision()  
 
   if args.user_script:
-    tag,key,script = args.user_script
-    P = UserScript(tag,key,script,ec2_user)
+    tag,key,ec2_user,script,script_args = args.user_script
+    P = UserScript(tag,key,ec2_user,script,script_args)
     P.run()
 
 if __name__ == '__main__':
