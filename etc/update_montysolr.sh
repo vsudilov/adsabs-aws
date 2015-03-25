@@ -17,6 +17,7 @@ aws s3 cp s3://adsabs-montysolr-etc/author_generated.translit author_generated.t
 aws s3 cp s3://adsabs-montysolr-etc/solrconfig_searcher.xml solrconfig.xml
 sed -i 's/TAG=""/TAG='"$TAG"'/' checkout_tag.sh
 docker build -t adsabs/montysolr:$TAG .
+git checkout checkout_tag.sh
 popd
 
 docker stop montysolr
@@ -24,9 +25,9 @@ docker rm montysolr
 docker run -d --name montysolr -p 8983:8983 -v /data:/data --restart=on-failure:3 adsabs/montysolr:$TAG
 
 #Poll this instance until it is responsive
-while 1;
+while true;
 do
-  STATUS=`curl -I -m 3 "http://localhost:8983/solr/select?q=star" | head -n 1 | cut -d$' ' -f2`
+  STATUS=`curl -I -m 3 "http://localhost:8983/solr/select?q=star&rows=1&fl=id" | head -n 1 | cut -d$' ' -f2`
   if [ ! -z "$STATUS" ];
     then
     if [ $STATUS == 200 ];
