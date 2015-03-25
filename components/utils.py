@@ -46,6 +46,19 @@ def find_r(path,pattern):
       matches.append(os.path.join(root, filename))
   return matches
 
+def get_eni_publicIP(instance=None):
+  '''
+  Get the most *probable* public IP of this instance:
+  if this_instance has multiple ENIs, get the ENI that
+  a) has a public IP
+  b) does not match this_instance.ip (since this will be bound to the default IP
+  '''
+  this_instance = get_this_instance() if instance is None else instance
+  enis = [i for i in this_instance.interfaces if i.publicIp and i.publicIp != this_instance.ip_address]
+  if len(enis) > 1:
+    raise Exception("I don't know what to do when multiple ENIs each with public IPs are attached!")
+  return enis[0].publicIp
+
 def find_resource_by_tag(tag,value):
   raise NotImplementedError
 

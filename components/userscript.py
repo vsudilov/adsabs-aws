@@ -11,7 +11,7 @@ import utils
 class UserScript:
   
   def __init__(self,tag,key,ec2_user,script,script_args):
-    tag = tags.split(':')
+    tag = tag.split(':')
     self.tag = {'key':tag[0],'value':tag[1]}
     self.key = os.path.abspath(key)
     self.script = os.path.abspath(script)
@@ -25,7 +25,7 @@ class UserScript:
   def get_instances(self):
     return self.c.get_only_instances(
       filters={
-        'tag-name':self.tag['key'],
+        'tag-key':self.tag['key'],
         'tag-value':self.tag['value'],
         'instance-state-name': 'running',
         }
@@ -33,21 +33,22 @@ class UserScript:
 
   def run(self):
     for i in self.get_instances():
+      ip = utils.get_eni_publicIP(instance=i) if len(i.interfaces) > 1 else i.ip_address
       rsync = "rsync -vrPa -e 'ssh -C -i {key}' {script} {user}@{remote}:/tmp/{tmpfile}".format(
         key=self.key,
         user=self.user,
         script=self.script,
-        remote=i.ip_address,
-        tmpfile=self.tmpfile
+        remote=ip,
+        tmpfile=self.tmpfile,
       )
-      ssh = "ssh -i {key} {user}@{remote} 'sudo bash /tmp/{tmpfile} {args}'".format(
+      ssh = "ssh -t -i {key} {user}@{remote} 'sudo bash /tmp/{tmpfile} {args}'".format(
         key=self.key,
-        remote=i.ip_address,
+        remote=ip,
         tmpfile=self.tmpfile,
         user=self.user,
         args=self.script_args,
       )
-      print "Targetting remote instance: %s | %s" % (i,i.ip_address)
+      print "Targetting remote instance: %s | %s" % (i,ip)
 
       s = time.time()
       print "\tRunning:\n\t\t%s" % rsync
