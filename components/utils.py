@@ -40,7 +40,7 @@ def find_partner_private_ip(tag):
         }
     )
     this_instance = get_this_instance()
-    peers = filter(lambda i: i != this_instance, instances)
+    peers = filter(lambda i: i.id != this_instance.id, instances)
     return peers[0].private_ip_address
 
 def get_account_id():
