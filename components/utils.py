@@ -29,6 +29,20 @@ def get_instance_tag_value(tag):
   except KeyError:
     raise KeyError('A tag named {tag} on {instance} does not exist'.format(tag=tag,instance=this_instance.id))
 
+def find_partner_private_ip(tag):
+    key, value = tag.split(':')
+    c = connect(boto.ec2.connection.EC2Connection)
+    instances = c.get_only_instances(
+        filters={
+            'tag-key': key,
+            'tag-value': value,
+            'instance-state-name': 'running',
+        }
+    )
+    this_instance = get_this_instance()
+    peers = filter(lambda i: i != this_instance, instances)
+    return peers[0].private_ip_address
+
 def get_account_id():
   c = connect(boto.iam.connection.IAMConnection)
   return c.get_user()['get_user_response']['get_user_result']['user']['arn'].split(':')[4]

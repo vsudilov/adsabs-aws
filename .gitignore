@@ -3,3 +3,4 @@ tmp/
 *.zip
 credentials.csv
 *.pem
+.idea/*
