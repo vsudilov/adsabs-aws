@@ -5,6 +5,7 @@ from components import utils
 from components import ENIProvisioner
 from components import UserScript
 from components import EBSProvisioner
+from components import Route53Provisioner
 
 def main():
     parser = argparse.ArgumentParser()
@@ -42,6 +43,17 @@ def main():
     )
 
     g.add_argument(
+        '--update-dns',
+        nargs=1,
+        dest='update_dns',
+        metavar=('zone'),
+        help='\n'.join([
+            'update the route53 zone with all instance hostnames set by their name tag',
+            'zone: route53 hosted zone to target',
+        ]),
+    )
+
+    g.add_argument(
         '--ebs',
         default=None,
         nargs=1,
@@ -67,6 +79,10 @@ def main():
         ]),
     )
     args = parser.parse_args()
+
+    if args.update_dns:
+        p = Route53Provisioner(args.update_dns)
+        p.provision()
 
     if args.get_instance_tag:
         sys.stdout.write(utils.get_instance_tag_value(args.get_instance_tag[0]))
