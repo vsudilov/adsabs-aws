@@ -23,24 +23,26 @@ def connect(connection_class):
     try:
         return connection_class()
     except boto.exception.NoAuthHandlerFound:
-        _id = os.environ.get('AWS_ACCESS_KEY', None)
-        key = os.environ.get('AWS_SECRET_KEY', None)
+        _id = os.environ.get('AWS_ACCESS_KEY')
+        key = os.environ.get('AWS_SECRET_KEY')
     return connection_class(aws_access_key_id=_id, aws_secret_access_key=key)
 
 
-def get_instance_tag_value(key):
+def get_instance_tag_value(key, instance=None):
     """
-    Returns the value associated with the current instance's tag based on the
+    Returns the value associated with an instance's tag based on the
     key
+    :param instance: boto instance object or None
     :param key: aws tag key
     :return: value associated with `key`
     """
-    this_instance = get_this_instance()
+    if instance is None:
+        instance = get_this_instance()
     try:
-        return this_instance.tags[key]
+        return instance.tags[key]
     except KeyError:
         raise KeyError('A tag named "{key}" on {instance} does not '
-                       'exist'.format(key=key, instance=this_instance.id))
+                       'exist'.format(key=key, instance=instance.id))
 
 
 def find_partner_private_ip(tag):
