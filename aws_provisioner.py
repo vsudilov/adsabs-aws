@@ -81,7 +81,7 @@ def main():
     args = parser.parse_args()
 
     if args.update_dns:
-        p = Route53Provisioner(args.update_dns)
+        p = Route53Provisioner(args.update_dns[0])
         p.provision()
 
     if args.get_instance_tag:
