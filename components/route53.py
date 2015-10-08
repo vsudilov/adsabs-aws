@@ -29,7 +29,10 @@ class Route53Provisioner:
 
         # Group instances by their tag "Name"
         instances = utils.connect(boto.ec2.EC2Connection).get_only_instances(
-            filters={'instance-state-name': 'running'}
+            filters={
+                'instance-state-name': 'running',
+                'vpc-id': utils.get_this_instance().vpc_id
+            }
         )
         network_map = {}
         for instance in instances:
